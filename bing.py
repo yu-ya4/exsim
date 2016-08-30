@@ -53,7 +53,7 @@ class Bing():
             skip:
             keys:
         Return:
-            list[string]
+            list[dict[string, string]]
         '''
         #the url sended at last
         final_url = "{0}&$top={1}&$skip={2}".format(request_url, top, skip)
