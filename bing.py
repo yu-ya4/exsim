@@ -2,7 +2,10 @@
 import urllib
 import requests
 import sys
+import os
+from webpage import WebPage
 import api_keys
+import constants
 
 class Bing():
     def __init__(self, api_key=api_keys.BING_API_KEY):
@@ -71,10 +74,25 @@ class Bing():
             results.append(result)
         return results
 
+    def fetch_web_pages(self, query):
+        if not os.path.exists(constants.FETCHED_PAGES_DIR_NAME):
+            os.mkdir(constants.FETCHED_PAGES_DIR_NAME)
+        os.chdir(constants.FETCHED_PAGES_DIR_NAME)
+
+        results = self.web_search(query=query, result_num=constants.NUM_OF_FETCHED_PAGES, keys=['Url'])
+        for i, result in enumerate(results):
+            page = WebPage(result['Url'])
+            page.fetch_html()
+            page.remove_html_tags()
+            f = open('%s_%s.html' % (query, str(i)), 'w')
+            f.write(page.html_body)
+            f.close()
 
 if __name__ == '__main__':
     # bing_api.pyを単独で使うと、入力した語で50件検索して結果を表示するツールになる
     for query in sys.stdin:
         bing = Bing()
-        results = bing.web_search(query=query, result_num=50, keys=["Title", "Url"])
-        print(results)
+        bing.fetch_web_pages(query)
+        # results = bing.web_search(query=query, result_num=100, keys=["Title", "Url"])
+        # # print(len(results))
+        # print(results)
