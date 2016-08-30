@@ -68,3 +68,11 @@ class Bing():
                 result[key] = item[key]
             results.append(result)
         return results
+
+
+if __name__ == '__main__':
+    # bing_api.pyを単独で使うと、入力した語で50件検索して結果を表示するツールになる
+    for query in sys.stdin:
+        bing = Bing()
+        results = bing.web_search(query=query, result_num=50, keys=["Title", "Url"])
+        print(results)
