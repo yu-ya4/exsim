@@ -16,6 +16,8 @@ class Bing():
             keys: string
                 'ID','Title','Description','DisplayUrl','Url' can be described
             skip: int
+        Return:
+            list[dict[string, string]]
         """
         url = 'https://api.datamarket.azure.com/Bing/Search/Web?'
         # the max number of one response
