@@ -1,3 +1,5 @@
 api_keys.py
 __pycache__
 *.pyc
+constants.py
+fetched_pages/
