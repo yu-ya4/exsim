@@ -93,10 +93,34 @@ if __name__ == '__main__':
     for query in sys.stdin:
         bing = Bing()
         # bing.fetch_web_pages(query)
-        results = bing.web_search(query=query, result_num=500, keys=["Title", "Description"])
-        texts = ""
-        for dic in results:
-            texts += dic['Title'] + dic['Description'] + '\n'
-        f = open('./docs/%s.txt' % (query), 'w')
-        f.write(texts)
+        action_list = []
+        f = open('./actions.txt', 'r')
+        for line in f:
+            action = line.replace('\n', '')
+            action_list.append(action)
         f.close()
+
+        index = 0
+        all_texts = ""
+        for action in action_list:
+            results = bing.web_search(query=action, result_num=500, keys=["Title", "Description"])
+            texts = ""
+            for dic in results:
+                texts += dic['Title'] + dic['Description'] + '\n'
+            f = open('./docs/%s.txt' % (str(index)), 'w')
+            f.write(texts)
+            f.close()
+            index += 1
+            all_texts += texts
+
+        fa = open('./docs/all.txt', 'w')
+        fa.write(all_texts)
+        fa.close()
+
+        # results = bing.web_search(query=query, result_num=500, keys=["Title", "Description"])
+        # texts = ""
+        # for dic in results:
+        #     texts += dic['Title'] + dic['Description'] + '\n'
+        # f = open('./docs/%s.txt' % (query), 'w')
+        # f.write(texts)
+        # f.close()
