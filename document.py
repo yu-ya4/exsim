@@ -5,6 +5,7 @@ class Document():
         self.document = []
         self.around_words = {}
         self.around_words_indexes = {}
+        self.action_list = []
 
     def read_texts(self, filename):
         f = open(filename)
@@ -14,15 +15,22 @@ class Document():
             self.document.append(sentence)
         f.close()
 
+    def read_action_list(self, filename):
+        self.action_list = []
+        f = open(filename, 'r')
+        for line in f:
+            action = line.replace('\n', '')
+            action = action.replace('"', '')
+            self.action_list.append(action)
+        f.close()
+
+
     def get_around_words(self, target, window=5):
         self.around_words = {}
         self.around_words_indexes = {}
         sen_i = 0
-        print(window)
         for sentence in self.document:
-
             target_indexes = [i for i, w in enumerate(sentence) if w == target]
-            print(target_indexes)
 
             if target_indexes:
                 around_words_index = []
@@ -53,9 +61,12 @@ class Document():
                 self.around_words_indexes[sen_i] = around_words_index
             sen_i += 1
 
+        print(sorted(self.around_words.items(), key=lambda x: x[1]))
+
 if __name__ == '__main__':
     doc = Document()
-    doc.read_texts('./data.txt')
-    doc.get_around_words('です', 5)
+    doc.read_action_list('./actions.txt')
+    doc.read_texts('./docs/data2.txt')
+    doc.get_around_words('ちょっと飲む', 5)
     print(doc.around_words)
-    print(doc.around_words_indexes)
+    # print(doc.around_words_indexes)
