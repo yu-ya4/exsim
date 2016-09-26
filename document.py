@@ -3,8 +3,8 @@
 class Document():
     def __init__(self):
         self.document = []
-        self.around_words = {}
-        self.around_words_indexes = {}
+        self.around_actions = {}
+        self.around_actions_indexes = {}
         self.action_list = []
 
     def read_texts(self, filename):
@@ -24,10 +24,19 @@ class Document():
             self.action_list.append(action)
         f.close()
 
+    def get_around_actions(self, window=5):
+        self.around_actions = {}
+        self.around_actions_indexes = {}
+
+        for action in self.action_list:
+            around_action, around_actions_index = self.get_around_words(action, window)
+            self.around_actions[action] = around_action
+            self.around_actions_indexes[action] = around_actions_index
+
 
     def get_around_words(self, target, window=5):
-        self.around_words = {}
-        self.around_words_indexes = {}
+        around_words = {}
+        around_words_indexes = {}
         sen_i = 0
         for sentence in self.document:
             target_indexes = [i for i, w in enumerate(sentence) if w == target]
@@ -53,20 +62,25 @@ class Document():
 
                 for index in around_words_index:
                     word = sentence[index]
-                    if word in self.around_words:
-                        self.around_words[word] += 1
+                    if word in around_words:
+                        around_words[word] += 1
                     else:
-                        self.around_words[word] = 1
+                        around_words[word] = 1
 
-                self.around_words_indexes[sen_i] = around_words_index
+                around_words_indexes[sen_i] = around_words_index
             sen_i += 1
 
-        print(sorted(self.around_words.items(), key=lambda x: x[1]))
+        return sorted(around_words.items(), key=lambda x: x[1]), around_words_indexes
 
 if __name__ == '__main__':
     doc = Document()
     doc.read_action_list('./actions.txt')
     doc.read_texts('./docs/data2.txt')
-    doc.get_around_words('ちょっと飲む', 5)
-    print(doc.around_words)
+    # print(doc.get_around_words('ちょっと飲む', 5))
+    doc.get_around_actions()
+    print(doc.around_actions['デートする'])
+    exit()
+    print('\n')
+    print(doc.around_actions_indexes)
+
     # print(doc.around_words_indexes)
