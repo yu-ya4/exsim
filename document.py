@@ -8,7 +8,12 @@ class Document():
         self.action_list = []
 
     def read_texts(self, filename):
-        f = open(filename)
+        '''
+        Args:
+            filename: str
+                分かち書きされた文書
+        '''
+        f = open(filename, 'r')
         for line in f:
             line = line.replace('\n', '')
             sentence = line.split(' ')
@@ -16,6 +21,11 @@ class Document():
         f.close()
 
     def read_action_list(self, filename):
+        '''
+        Args:
+            filename: str
+                行動のリスト(一行につき一行動)
+        '''
         self.action_list = []
         f = open(filename, 'r')
         for line in f:
@@ -25,6 +35,14 @@ class Document():
         f.close()
 
     def get_around_actions(self, window=5):
+        '''
+        リスト中の行動の周辺語を得る
+            ex.) self.around_actions['ゆっくり飲む'] = {'バー': 10, ...}
+
+        Args:
+            window: int
+                周辺語をとるサイズ
+        '''
         self.around_actions = {}
         self.around_actions_indexes = {}
 
@@ -35,6 +53,13 @@ class Document():
 
 
     def get_around_words(self, target, window=5):
+        '''
+        Args:
+            target: str
+                対象とする語
+            window: int
+                周辺語をとるサイズ
+        '''
         around_words = {}
         around_words_indexes = {}
         sen_i = 0
@@ -70,7 +95,8 @@ class Document():
                 around_words_indexes[sen_i] = around_words_index
             sen_i += 1
 
-        return sorted(around_words.items(), key=lambda x: x[1]), around_words_indexes
+        return around_words, around_words_indexes
+        # return sorted(around_words.items(), key=lambda x: x[1]), around_words_indexes
 
 if __name__ == '__main__':
     doc = Document()
@@ -78,7 +104,8 @@ if __name__ == '__main__':
     doc.read_texts('./docs/data2.txt')
     # print(doc.get_around_words('ちょっと飲む', 5))
     doc.get_around_actions()
-    print(doc.around_actions['デートする'])
+    print(doc.around_actions)
+    # print(sorted(doc.around_actions['ちょっと飲む'].items(), key = lambda x: x[1]))
     exit()
     print('\n')
     print(doc.around_actions_indexes)
