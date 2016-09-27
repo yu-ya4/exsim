@@ -4,11 +4,13 @@ from gensim.models import word2vec
 import sys
 
 def show_similar_actions(model, action_list, action):
-
-    out = model.most_similar(positive=[action], topn=100000)
-    for x in out:
-        if x[0] in action_list:
-            print(x[0], x[1])
+    if action in action_list:
+        out = model.most_similar(positive=[action], topn=100000)
+        for x in out:
+            if x[0] in action_list:
+                print(x[0], x[1])
+    else:
+        print('There is not such action.')
 
 if __name__ == '__main__':
 
@@ -16,11 +18,10 @@ if __name__ == '__main__':
     f = open('./actions.txt', 'r')
     for line in f:
         action = line.replace('\n', '')
-        action = action.replace('"', '')
         action_list.append(action)
     f.close()
 
-    model = word2vec.Word2Vec.load('./models/test2.model')
+    model = word2vec.Word2Vec.load('./models/0_0_drink.model')
     # out = model.most_similar(positive=['ちょっと飲む'], topn=100000)
     # for x in out:
     #     if x[0] in action_list:
