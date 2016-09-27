@@ -98,14 +98,19 @@ class Document():
         return around_words, around_words_indexes
         # return sorted(around_words.items(), key=lambda x: x[1]), around_words_indexes
 
+    def show_around_action(self, action):
+        print(sorted(self.around_actions[action].items(), key = lambda x: x[1]))
+
 if __name__ == '__main__':
     doc = Document()
     doc.read_action_list('./actions.txt')
-    doc.read_texts('./docs/data2.txt')
+    doc.read_texts('./docs/0_0_data.txt')
     # print(doc.get_around_words('ちょっと飲む', 5))
     doc.get_around_actions()
-    print(doc.around_actions)
-    # print(sorted(doc.around_actions['ちょっと飲む'].items(), key = lambda x: x[1]))
+    # print(doc.around_actions)
+    doc.show_around_action('ちょっと飲む')
+    exit()
+    print(sorted(doc.around_actions['ちょっと飲む'].items(), key = lambda x: x[1]))
     exit()
     print('\n')
     print(doc.around_actions_indexes)
