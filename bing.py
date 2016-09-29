@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import urllib
+import lxml.html
 import requests
 import sys
 import os
 from webpage import WebPage
 import api_keys
 import constants
+from time import sleep
 
 class Bing():
     def __init__(self, api_key=api_keys.BING_API_KEY):
@@ -78,7 +80,16 @@ class Bing():
         query = query + ' site:tabelog.com -site:tabelog.com/matome'
         urls = self.web_search(query, result_num, keys=["Url"], skip=0)
         for url in urls:
-            print(url['Url'])
+            html = requests.get(url['Url']).text
+            sleep(2)
+            root = lxml.html.fromstring(html)
+            try:
+                text = root.cssselect('.rvw-item__rvw-title')[0].text_content()
+                text += root.cssselect('.rvw-item__rvw-comment > p')[0].text_content()
+                print(text)
+            except:
+                continue
+
 
     def fetch_web_pages(self, query):
         # if not os.path.exists(constants.FETCHED_PAGES_DIR_NAME):
@@ -97,7 +108,7 @@ class Bing():
 if __name__ == '__main__':
 
     bing = Bing()
-    bing.get_tabelog_reviews('ちょっと飲む', 50)
+    bing.get_tabelog_reviews('ちょっと飲む', 10)
     exit;
     # bing.fetch_web_pages(query)
     action_list = []
