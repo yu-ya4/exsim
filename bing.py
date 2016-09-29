@@ -74,6 +74,12 @@ class Bing():
             results.append(result)
         return results
 
+    def get_tabelog_reviews(self, query, result_num=10):
+        query = query + ' site:tabelog.com -site:tabelog.com/matome'
+        urls = self.web_search(query, result_num, keys=["Url"], skip=0)
+        for url in urls:
+            print(url['Url'])
+
     def fetch_web_pages(self, query):
         # if not os.path.exists(constants.FETCHED_PAGES_DIR_NAME):
         #     os.mkdir(constants.FETCHED_PAGES_DIR_NAME)
@@ -91,6 +97,8 @@ class Bing():
 if __name__ == '__main__':
 
     bing = Bing()
+    bing.get_tabelog_reviews('ちょっと飲む', 50)
+    exit;
     # bing.fetch_web_pages(query)
     action_list = []
     f = open('./actions.txt', 'r')
