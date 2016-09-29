@@ -79,16 +79,19 @@ class Bing():
     def get_tabelog_reviews(self, query, result_num=10):
         query = query + ' site:tabelog.com -site:tabelog.com/matome'
         urls = self.web_search(query, result_num, keys=["Url"], skip=0)
+        reviews = []
         for url in urls:
             html = requests.get(url['Url']).text
             sleep(2)
             root = lxml.html.fromstring(html)
             try:
-                text = root.cssselect('.rvw-item__rvw-title')[0].text_content()
-                text += root.cssselect('.rvw-item__rvw-comment > p')[0].text_content()
-                print(text)
+                reviwe = root.cssselect('.rvw-item__rvw-title')[0].text_content()
+                reviwe += root.cssselect('.rvw-item__rvw-comment > p')[0].text_content()
+                reviews.append(reviwe)
             except:
                 continue
+
+        return reviews
 
 
     def fetch_web_pages(self, query):
@@ -107,9 +110,41 @@ class Bing():
 
 if __name__ == '__main__':
 
+    action_list = []
+    f = open('./actions.txt', 'r')
+    for line in f:
+        action = line.replace('\n', '')
+        action = action
+        action_list.append(action)
+    f.close()
+
     bing = Bing()
-    bing.get_tabelog_reviews('ちょっと飲む', 10)
-    exit;
+    index = 0
+    all_texts = ""
+    for action in action_list:
+        results = bing.get_tabelog_reviews(action, 50)
+        texts = ""
+        for result in results:
+            text = result.replace('\n', '')
+            # print(result)
+            texts += text + '\n'
+        f = open('./docs/tabelog/1_%s.txt' % (str(index)), 'w')
+        f.write(texts)
+        f.close()
+        print(index)
+        index += 1
+        all_texts += texts
+
+    fa = open('./docs/tabelog/1_all.txt', 'w')
+    fa.write(all_texts)
+    fa.close()
+    exit()
+
+    bing = Bing()
+    results = bing.get_tabelog_reviews('ちょっと飲む', 10)
+    for result in results:
+        print(result)
+    exit();
     # bing.fetch_web_pages(query)
     action_list = []
     f = open('./actions.txt', 'r')
