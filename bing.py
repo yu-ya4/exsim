@@ -114,10 +114,12 @@ if __name__ == '__main__':
     f = open('./actions.txt', 'r')
     for line in f:
         action = line.replace('\n', '')
-        action = action
+        action = '"' + action + '"'
         action_list.append(action)
     f.close()
 
+    exit()
+    
     bing = Bing()
     index = 0
     all_texts = ""
@@ -128,14 +130,14 @@ if __name__ == '__main__':
             text = result.replace('\n', '')
             # print(result)
             texts += text + '\n'
-        f = open('./docs/tabelog/1_%s.txt' % (str(index)), 'w')
+        f = open('./docs/tabelog/0_%s.txt' % (str(index)), 'w')
         f.write(texts)
         f.close()
         print(index)
         index += 1
         all_texts += texts
 
-    fa = open('./docs/tabelog/1_all.txt', 'w')
+    fa = open('./docs/tabelog/0_all.txt', 'w')
     fa.write(all_texts)
     fa.close()
     exit()
