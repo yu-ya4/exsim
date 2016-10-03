@@ -101,14 +101,30 @@ class Document():
     def show_around_action(self, action):
         print(sorted(self.around_actions[action].items(), key = lambda x: x[1]))
 
+    def get_around_action(self, action):
+        results = []
+        for word, frequent in sorted(self.around_actions[action].items(), key = lambda x: x[1], reverse=True):
+            results.append([word, frequent])
+
+        return results
+        
 if __name__ == '__main__':
     doc = Document()
     doc.read_action_list('./actions.txt')
-    doc.read_texts('./docs/0_0_data.txt')
+    doc.read_texts('./docs/1_1_data.txt')
     # print(doc.get_around_words('ちょっと飲む', 5))
-    doc.get_around_actions()
+    doc.get_around_actions(15)
     # print(doc.around_actions)
-    doc.show_around_action('ちょっと飲む')
+
+    for action in doc.action_list:
+        filename = './result/1_1_drink/' + action + '_around.txt'
+        result = doc.get_around_action(action)
+        f_w = open(filename, 'w')
+        for r in result:
+            line = r[0] + ':' + str(r[1]) + '\n'
+            f_w.write(line)
+        f_w.close()
+
     exit()
     print(sorted(doc.around_actions['ちょっと飲む'].items(), key = lambda x: x[1]))
     exit()
