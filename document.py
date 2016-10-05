@@ -127,19 +127,40 @@ class Document():
     def make_replace_dict(self):
         replace_dict = {}
         mt = MeCab.Tagger("-Ochasen")
+        index = 0
         for action in self.action_list:
             res = mt.parseToNode(action)
+            values = []
             while res:
-                print(res.surface)
                 arr = res.feature.split(",")
-                print(arr)
+                # print(arr)
+                if arr[0] == '動詞' and arr[6] == '飲む':
+                    res = res.next
+                    continue
+                if arr[0] == '名詞' or arr[0] == '動詞' or arr[0] == '副詞' or arr[0] == '形容詞':
+                    if arr[6] == '*':
+                        values.append(res.surface)
+                    else:
+                        values.append(arr[6])
+
                 res = res.next
+            key = 'drink_replace_number_' + str(index)
+            replace_dict[key] = values
+            index += 1
+
+        return replace_dict
 
 
 if __name__ == '__main__':
     doc = Document()
     doc.read_action_list('./act-drink.txt')
-    doc.make_replace_dict()
+    dict = doc.make_replace_dict()
+    for key, values in dict.items():
+        a = key
+        for i in values:
+            a += ' '
+            a += i
+        print(a)
     exit()
     doc.read_texts('./docs/0_0_data.txt')
     # print(doc.get_around_words('ちょっと飲む', 5))
