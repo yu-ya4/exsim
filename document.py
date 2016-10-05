@@ -1,5 +1,7 @@
 # -*-coding: utf-8 -*-
 
+import MeCab
+
 class Document():
     def __init__(self):
         self.document = []
@@ -117,9 +119,28 @@ class Document():
         '''
         print(sorted(self.around_actions[action].items(), key = lambda x: x[1]))
 
+    def replace_actions_symbols(self):
+        self.document
+        self.action_list
+
+
+    def make_replace_dict(self):
+        replace_dict = {}
+        mt = MeCab.Tagger("-Ochasen")
+        for action in self.action_list:
+            res = mt.parseToNode(action)
+            while res:
+                print(res.surface)
+                arr = res.feature.split(",")
+                print(arr)
+                res = res.next
+
+
 if __name__ == '__main__':
     doc = Document()
-    doc.read_action_list('./actions.txt')
+    doc.read_action_list('./act-drink.txt')
+    doc.make_replace_dict()
+    exit()
     doc.read_texts('./docs/0_0_data.txt')
     # print(doc.get_around_words('ちょっと飲む', 5))
     doc.get_around_actions()
