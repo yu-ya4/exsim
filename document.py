@@ -64,7 +64,11 @@ class Document():
             window: int
                 周辺語をとるサイズ
         Returns:
-
+            around_words: Dictionary<str, int>
+                周辺語をkey，出現頻度をvalueとした辞書
+            around_words_indexes: Dictionary<int, List<List<int>, List<int>>>
+                文書番号をkey，ターゲットインデックスのリストと周辺語のリストのリストをvalueとした辞書
+                {文書番号: [[target_indexes], [around_words_index]]}
         '''
         around_words = {}
         around_words_indexes = {}
@@ -106,7 +110,7 @@ class Document():
                         around_words[word] = 1
 
                 # 文章番号をキーに，文章ごとの対象語の周辺語のインデックスを値とした辞書を作成
-                around_words_indexes[sen_i] = around_words_index
+                around_words_indexes[sen_i] = [target_indexes, around_words_index]
             sen_i += 1
 
         return around_words, around_words_indexes
@@ -120,8 +124,11 @@ class Document():
         print(sorted(self.around_actions[action].items(), key = lambda x: x[1]))
 
     def replace_actions_symbols(self):
-        self.document
-        self.action_list
+        replace_dict = self.make_replace_dict()
+        around_words, around_words_indexes = self.get_around_words('飲む', 15)
+        print(around_words_indexes)
+
+
 
 
     def make_replace_dict(self):
@@ -134,6 +141,7 @@ class Document():
             while res:
                 arr = res.feature.split(",")
                 # print(arr)
+                # とりあえず「飲む」専用
                 if arr[0] == '動詞' and arr[6] == '飲む':
                     res = res.next
                     continue
@@ -155,14 +163,16 @@ if __name__ == '__main__':
     doc = Document()
     doc.read_action_list('./act-drink.txt')
     dict = doc.make_replace_dict()
-    for key, values in dict.items():
-        a = key
-        for i in values:
-            a += ' '
-            a += i
-        print(a)
-    exit()
+    # for key, values in dict.items():
+    #     a = key
+    #     for i in values:
+    #         a += ' '
+    #         a += i
+    #     print(a)
+    # exit()
     doc.read_texts('./docs/0_0_data.txt')
+    doc.replace_actions_symbols()
+    exit()
     # print(doc.get_around_words('ちょっと飲む', 5))
     doc.get_around_actions()
     # print(doc.around_actions)
