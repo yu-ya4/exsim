@@ -128,14 +128,14 @@ class Document():
         replace_dict = self.make_replace_dict()
         # 置換するターゲットを記憶する
         replace_target = {}
+        self.document = [['天気', 'が', '良い', 'ので', 'ちょっと', '出かけて', '飲む', 'こと', 'する'],
+                            ['さあ', '親', 'と', 'ちょっと', '飲む']]
 
-        print(replace_dict)
         del replace_dict['drink_replace_number_18']
+        del replace_dict['drink_replace_number_23']
         del replace_dict['drink_replace_number_30']
         del replace_dict['drink_replace_number_37']
         del replace_dict['drink_replace_number_42']
-        print(len(replace_dict))
-        exit()
         around_words, around_words_indexes = self.get_around_words('飲む', 15)
         for key, around_words_index in around_words_indexes.items():
             sen_i, target_id = map(int, key.split(':'))
@@ -146,10 +146,19 @@ class Document():
                         if action_symbol in replace_target:
                             replace_target[action_symbol].append([sen_i, target_id])
                         else:
-                            replace_target[action_symbol] = [sen_i, target_id]
+                            replace_target[action_symbol] = [[sen_i, target_id]]
 
+        for action_symbol, target_id in replace_target.items():
+            print(action_symbol)
+            print(target_id)
+            for target in target_id:
+                s_i, t_i = int(target[0]), int(target[1])
+                if self.document[s_i][t_i] == '飲む':
+                    self.document[s_i].pop(t_i)
+
+                self.document[s_i].insert(t_i, action_symbol)
         print(self.document)
-        # print(replace_target)
+        print(replace_target)
 
     def make_replace_dict(self):
         replace_dict = {}
