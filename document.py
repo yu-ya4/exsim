@@ -129,6 +129,13 @@ class Document():
         # 置換するターゲットを記憶する
         replace_target = {}
 
+        print(replace_dict)
+        del replace_dict['drink_replace_number_18']
+        del replace_dict['drink_replace_number_30']
+        del replace_dict['drink_replace_number_37']
+        del replace_dict['drink_replace_number_42']
+        print(len(replace_dict))
+        exit()
         around_words, around_words_indexes = self.get_around_words('飲む', 15)
         for key, around_words_index in around_words_indexes.items():
             sen_i, target_id = map(int, key.split(':'))
