@@ -126,10 +126,23 @@ class Document():
 
     def replace_actions_symbols(self):
         replace_dict = self.make_replace_dict()
+        # 置換するターゲットを記憶する
+        replace_target = {}
+
         around_words, around_words_indexes = self.get_around_words('飲む', 15)
         for key, around_words_index in around_words_indexes.items():
-            sen_i, i = map(int, key.split(':'))
-        # print(around_words_indexes)
+            sen_i, target_id = map(int, key.split(':'))
+            for i in around_words_index:
+                for action_symbol, keyword in replace_dict.items():
+                    if self.document[sen_i][i] == keyword[0]:
+                        self.document[sen_i][i] = action_symbol
+                        if action_symbol in replace_target:
+                            replace_target[action_symbol].append([sen_i, target_id])
+                        else:
+                            replace_target[action_symbol] = [sen_i, target_id]
+
+        print(self.document)
+        # print(replace_target)
 
     def make_replace_dict(self):
         replace_dict = {}
@@ -150,7 +163,6 @@ class Document():
                         values.append(res.surface)
                     else:
                         values.append(arr[6])
-
                 res = res.next
             key = 'drink_replace_number_' + str(index)
             replace_dict[key] = values
@@ -161,7 +173,7 @@ class Document():
 
 if __name__ == '__main__':
     doc = Document()
-    doc.read_action_list('./act-drink.txt')
+    doc.read_action_list('./actions.txt')
     dict = doc.make_replace_dict()
     # for key, values in dict.items():
     #     a = key
