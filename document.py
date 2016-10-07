@@ -66,9 +66,9 @@ class Document():
         Returns:
             around_words: Dictionary<str, int>
                 周辺語をkey，出現頻度をvalueとした辞書
-            around_words_indexes: Dictionary<int, List<List<int>, List<int>>>
-                文書番号をkey，ターゲットインデックスのリストと周辺語のリストのリストをvalueとした辞書
-                {文書番号: [[target_indexes], [around_words_index]]}
+            around_words_indexes: Dictionary<str, List<int>>
+                文書番号とターゲーットインデックスをkey，周辺語のリストのリストをvalueとした辞書
+                {(文書番号:ターゲットインデックス): [around_words_index]}
         '''
         around_words = {}
         around_words_indexes = {}
@@ -80,10 +80,10 @@ class Document():
 
             # 文章中に対象語があれば周辺語を取得
             if target_indexes:
-                around_words_index = []
                 length = len(sentence)
 
                 for i in target_indexes:
+                    around_words_index = []
                     j = i + 1
                     while 1:
                         # 対象語よりウィンドウサイズ以内の語のインデックスを取得
@@ -101,16 +101,17 @@ class Document():
                         around_words_index.append(j)
                         j -= 1
 
-                for index in around_words_index:
-                    # 周辺語の出現頻度を値とした辞書を作成
-                    word = sentence[index]
-                    if word in around_words:
-                        around_words[word] += 1
-                    else:
-                        around_words[word] = 1
+                    for index in around_words_index:
+                        # 周辺語の出現頻度を値とした辞書を作成
+                        word = sentence[index]
+                        if word in around_words:
+                            around_words[word] += 1
+                        else:
+                            around_words[word] = 1
 
-                # 文章番号をキーに，文章ごとの対象語の周辺語のインデックスを値とした辞書を作成
-                around_words_indexes[sen_i] = [target_indexes, around_words_index]
+                    # 文章番号とターゲットインデックスをキーに，文章ごとの対象語の周辺語のインデックスを値とした辞書を作成
+                    key = str(sen_i) + ':' + str(i)
+                    around_words_indexes[key] = around_words_index
             sen_i += 1
 
         return around_words, around_words_indexes
@@ -126,10 +127,9 @@ class Document():
     def replace_actions_symbols(self):
         replace_dict = self.make_replace_dict()
         around_words, around_words_indexes = self.get_around_words('飲む', 15)
-        print(around_words_indexes)
-
-
-
+        for key, around_words_index in around_words_indexes.items():
+            sen_i, i = map(int, key.split(':'))
+        # print(around_words_indexes)
 
     def make_replace_dict(self):
         replace_dict = {}
