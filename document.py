@@ -1,6 +1,7 @@
 # -*-coding: utf-8 -*-
 
 import MeCab
+import sys
 
 class Document():
     def __init__(self):
@@ -8,6 +9,7 @@ class Document():
         self.around_actions = {}
         self.around_actions_indexes = {}
         self.action_list = []
+        self.replace_flg = 0
 
     def read_texts(self, filename):
         '''
@@ -49,10 +51,18 @@ class Document():
         self.around_actions = {}
         self.around_actions_indexes = {}
 
-        for action in self.action_list:
-            around_action, around_actions_index = self.get_around_words(action, window)
-            self.around_actions[action] = around_action
-            self.around_actions_indexes[action] = around_actions_index
+        if not self.replace_flg:
+            for action in self.action_list:
+                around_action, around_actions_index = self.get_around_words(action, window)
+                self.around_actions[action] = around_action
+                self.around_actions_indexes[action] = around_actions_index
+        else:
+            i = 0
+            for action in self.action_list:
+                action_symbol = 'drink_replace_number_' + str(i)
+                around_action, around_actions_index = self.get_around_words(action_symbol, window)
+                self.around_actions[action] = around_action
+                self.around_actions_indexes[action] = around_actions_index
 
 
     def get_around_words(self, target, window=5):
@@ -124,19 +134,21 @@ class Document():
         '''
         print(sorted(self.around_actions[action].items(), key = lambda x: x[1]))
 
-    def replace_actions_symbols(self):
+    def replace_actions_symbols(self, window=5):
         replace_dict = self.make_replace_dict()
         # 置換するターゲットを記憶する
         replace_target = {}
-        self.document = [['天気', 'が', '良い', 'ので', 'ちょっと', '出かけて', '飲む', 'こと', 'する'],
-                            ['さあ', '親', 'と', 'ちょっと', '飲む']]
+        # self.document = [['天気', 'が', '良い', 'ので', 'ちょっと', '出かけて', '飲む', 'こと', 'する'],
+                            # ['さあ', '親', 'と', 'ちょっと', '飲む']]
 
+        # 一時的に除外
         del replace_dict['drink_replace_number_18']
         del replace_dict['drink_replace_number_23']
         del replace_dict['drink_replace_number_30']
         del replace_dict['drink_replace_number_37']
         del replace_dict['drink_replace_number_42']
-        around_words, around_words_indexes = self.get_around_words('飲む', 15)
+
+        around_words, around_words_indexes = self.get_around_words('飲む', window)
         for key, around_words_index in around_words_indexes.items():
             sen_i, target_id = map(int, key.split(':'))
             for i in around_words_index:
@@ -149,16 +161,14 @@ class Document():
                             replace_target[action_symbol] = [[sen_i, target_id]]
 
         for action_symbol, target_id in replace_target.items():
-            print(action_symbol)
-            print(target_id)
             for target in target_id:
                 s_i, t_i = int(target[0]), int(target[1])
                 if self.document[s_i][t_i] == '飲む':
                     self.document[s_i].pop(t_i)
 
                 self.document[s_i].insert(t_i, action_symbol)
-        print(self.document)
-        print(replace_target)
+
+        self.replace_flg = 1
 
     def make_replace_dict(self):
         replace_dict = {}
@@ -186,25 +196,31 @@ class Document():
 
         return replace_dict
 
+    def write_document(self, filepath):
+        f = open(filepath, 'w')
+        for sentence in self.document:
+            text = ''
+            for word in sentence:
+                text += word
+                text += ' '
+            text += '\n'
+            f.write(text)
+
+        f.close()
+
 
 if __name__ == '__main__':
     doc = Document()
     doc.read_action_list('./actions.txt')
-    dict = doc.make_replace_dict()
-    # for key, values in dict.items():
-    #     a = key
-    #     for i in values:
-    #         a += ' '
-    #         a += i
-    #     print(a)
-    # exit()
-    doc.read_texts('./docs/0_0_data.txt')
-    doc.replace_actions_symbols()
-    exit()
+    doc.read_texts('./docs/tabelog/1_1_tabe_data.txt')
+    doc.replace_actions_symbols(15)
+    # doc.write_document('./docs/tabelog/1_1_tabe_data_replace.txt')
     # print(doc.get_around_words('ちょっと飲む', 5))
-    doc.get_around_actions()
+    doc.get_around_actions(15)
     # print(doc.around_actions)
-    doc.show_around_action('ちょっと飲む')
+    for query in sys.stdin:
+        action = query.replace('\n', '')
+        doc.show_around_action(action)
     exit()
     print(sorted(doc.around_actions['ちょっと飲む'].items(), key = lambda x: x[1]))
     exit()
