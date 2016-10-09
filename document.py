@@ -135,12 +135,12 @@ class Document():
         '''
         print(sorted(self.words_around_actions[action].items(), key = lambda x: x[1]))
 
-    def replace_actions_symbols(self, window=5):
+    def replace_actions(self, window=5):
         replace_dict = self.make_replace_dict()
         # 置換するターゲットを記憶する
-        replace_target = {}
-        # self.document = [['天気', 'が', '良い', 'ので', 'ちょっと', '出かけて', '飲む', 'こと', 'する'],
-                            # ['さあ', '親', 'と', 'ちょっと', '飲む']]
+        replace_targets = {}
+        self.document = [['天気', 'が', '良い', 'ので', 'ちょっと', '出かけて', '飲む', 'こと', 'する'],
+                            ['さあ', '親', 'と', 'ちょっと', '飲む']]
 
         # 一時的に除外
         del replace_dict['drink_replace_number_18']
@@ -149,29 +149,38 @@ class Document():
         del replace_dict['drink_replace_number_37']
         del replace_dict['drink_replace_number_42']
 
-        around_words, around_words_indexes = self.get_around_words('飲む', window)
-        for key, around_words_index in around_words_indexes.items():
+        words, indexes = self.get_words_around_word('飲む', window)
+        for key, index in indexes.items():
             sen_i, target_id = map(int, key.split(':'))
-            for i in around_words_index:
-                for action_symbol, keyword in replace_dict.items():
+            for i in index:
+                for symbol, keyword in replace_dict.items():
                     if self.document[sen_i][i] == keyword[0]:
-                        self.document[sen_i][i] = action_symbol
-                        if action_symbol in replace_target:
-                            replace_target[action_symbol].append([sen_i, target_id])
-                        else:
-                            replace_target[action_symbol] = [[sen_i, target_id]]
+                        # 辞書にある語があれば記号に置き換え
+                        self.document[sen_i][i] = symbol
 
-        for action_symbol, target_id in replace_target.items():
-            for target in target_id:
+                        if symbol in replace_targets:
+                            replace_targets[symbol].append([sen_i, target_id])
+                        else:
+                            replace_targets[symbol] = [[sen_i, target_id]]
+
+        for symbol, targets in replace_targets.items():
+            for target in targets:
                 s_i, t_i = int(target[0]), int(target[1])
+
                 if self.document[s_i][t_i] == '飲む':
+                    # 「飲む」消去
                     self.document[s_i].pop(t_i)
 
-                self.document[s_i].insert(t_i, action_symbol)
+                self.document[s_i].insert(t_i, symbol)
 
         self.replace_flg = 1
 
     def make_replace_dict(self):
+        '''
+        行動を記号に置き換えるための辞書を作成
+        ex. 「ちょっと飲む」→「ちょっと」，「飲む」
+        2語がwindowサイズ内にあれば記号に置き換える
+        '''
         replace_dict = {}
         mt = MeCab.Tagger("-Ochasen")
         index = 0
@@ -198,15 +207,19 @@ class Document():
         return replace_dict
 
     def write_document(self, filepath):
+        '''
+        self.documentをテキストファイルに書き出す
+        '''
         f = open(filepath, 'w')
         for sentence in self.document:
             text = ''
-            for word in sentence:
-                text += word
-                text += ' '
-            text += '\n'
+            for i in range(len(sentence)):
+                text += sentence[i]
+                if i == len(sentence) - 1:
+                    text += '\n'
+                else:
+                    text += ' '
             f.write(text)
-
         f.close()
 
 
