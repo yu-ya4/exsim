@@ -223,6 +223,13 @@ class Document():
         f.close()
 
 
+    def get_around_action(self, action):
+        results = []
+        for word, frequent in sorted(self.around_actions[action].items(), key = lambda x: x[1], reverse=True):
+            results.append([word, frequent])
+
+        return results
+
 if __name__ == '__main__':
     doc = Document()
     doc.read_action_list('./actions.txt')
@@ -235,6 +242,18 @@ if __name__ == '__main__':
     for query in sys.stdin:
         action = query.replace('\n', '')
         doc.show_words_around_action(action)
+
+    # 周辺語を書き込む
+    # doc.read_texts('./docs/1_1_data.txt')
+    # doc.get_around_actions(15)
+    # for action in doc.action_list:
+    #     filename = './result/1_1_drink/' + action + '_around.txt'
+    #     result = doc.get_around_action(action)
+    #     f_w = open(filename, 'w')
+    #     for r in result:
+    #         line = r[0] + ':' + str(r[1]) + '\n'
+    #         f_w.write(line)
+    #     f_w.close()
     exit()
     print(sorted(doc.around_actions['ちょっと飲む'].items(), key = lambda x: x[1]))
     exit()

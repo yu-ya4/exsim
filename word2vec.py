@@ -26,6 +26,22 @@ def show_similar_actions_symbol(model, action_list, action):
     else:
         print('There is not such action.')
 
+def get_similar_actions(model, action_list, action):
+    result = []
+    try:
+        if action in action_list:
+            out = model.most_similar(positive=[action], topn=100000)
+            for x in out:
+                if x[0] in action_list:
+                    result.append([x[0], x[1]])
+        else:
+            print('There is not such action.')
+
+        return result
+    except:
+
+        return result
+
 if __name__ == '__main__':
 
     action_list = []
@@ -37,6 +53,19 @@ if __name__ == '__main__':
 
     model = word2vec.Word2Vec.load('./models/1_1_tabe_replace.model')
 
+    for action in action_list:
+        results = get_similar_actions(model, action_list, action)
+
+        filename = './result/0_0_tabe/' + action + '.txt'
+        f_r = open(filename, 'w')
+        for result in results:
+            line = result[0] + ':' + str(result[1]) + '\n'
+            f_r.write(line)
+        f_r.close()
+
+
+
+    exit()
     for query in sys.stdin:
         action = query.replace('\n', '')
         show_similar_actions_symbol(model, action_list, action)
