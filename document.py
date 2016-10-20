@@ -179,7 +179,7 @@ class Document():
         '''
         行動を記号に置き換えるための辞書を作成
         ex. 「ちょっと飲む」→「ちょっと」，「飲む」
-        2語がwindowサイズ内にあれば記号に置き換える
+        すべての語がwindowサイズ内にあれば記号に置き換える
         '''
         replace_dict = {}
         mt = MeCab.Tagger("-Ochasen")
@@ -189,11 +189,6 @@ class Document():
             values = []
             while res:
                 arr = res.feature.split(",")
-                # print(arr)
-                # とりあえず「飲む」専用
-                if arr[0] == '動詞' and arr[6] == '飲む':
-                    res = res.next
-                    continue
                 if arr[0] == '名詞' or arr[0] == '動詞' or arr[0] == '副詞' or arr[0] == '形容詞':
                     if arr[6] == '*':
                         values.append(res.surface)
@@ -232,7 +227,9 @@ class Document():
 
 if __name__ == '__main__':
     doc = Document()
-    doc.read_action_list('./actions.txt')
+    doc.read_action_list('./act-drink.txt')
+    dic = doc.make_replace_dict()
+    exit()
     doc.read_document('./docs/tabelog/1_1_tabe_data.txt')
     # doc.replace_actions_symbols(15)
     # doc.write_document('./docs/tabelog/1_1_tabe_data_replace.txt')
