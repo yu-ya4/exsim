@@ -147,11 +147,13 @@ class Document():
             if target_verb in keywords:
                 keywords.remove(target_verb)
 
+        # 語の原形を比較するため
+        mt = MeCab.Tagger("-Ochasen")
 
         # 置換するターゲットを記憶する
         replace_targets = {}
-        self.document = [['天気', 'が', '良い', 'ので', '一', '人', 'で', 'ちょっと', '出かけて', '飲む', 'こと', 'する'],
-                            ['さあ', '親', 'と', 'ちょっと', '飲む']]
+        # self.document = [['天気', 'が', '良い', 'ので', '一', '人', 'で', 'ちょっと', '出かけて', '安く','飲む', 'こと', 'する'],
+        #                     ['さあ', '親', 'と', 'ちょっと', '飲む', '。', '安い', 'し', '美味い']]
 
         words, indexes = self.get_words_around_word(target_verb, window)
         for key, index in indexes.items():
@@ -164,7 +166,14 @@ class Document():
                     if not keywords_in:
                         break
                     for i in index:
-                        if self.document[sen_i][i] == keyword:
+                        res = mt.parseToNode(self.document[sen_i][i])
+                        res = res.next
+                        arr = res.feature.split(",")
+                        if arr[6] == '*':
+                            original_form = res.surface
+                        else:
+                            original_form = arr[6]
+                        if original_form == keyword:
                             temp.append(i)
                             keywords_in = True
                             break
@@ -248,10 +257,10 @@ class Document():
 if __name__ == '__main__':
     doc = Document()
     doc.read_action_list('./act-drink.txt')
-    doc.replace_actions('飲む', 5)
+    doc.read_document('./docs/tabelog/1_1_tabe_data.txt')
+    doc.replace_actions('飲む', 15)
     print(doc.document)
     exit()
-    doc.read_document('./docs/tabelog/1_1_tabe_data.txt')
     # doc.replace_actions_symbols(15)
     # doc.write_document('./docs/tabelog/1_1_tabe_data_replace.txt')
     # print(doc.get_around_words('ちょっと飲む', 5))
