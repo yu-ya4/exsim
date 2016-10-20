@@ -8,3 +8,4 @@ fetched_pages/
 *.csv
 *.model
 gensimPy3
+.*
