@@ -15,7 +15,7 @@ def show_similar_actions(model, action_list, action):
 def show_similar_actions_symbol(model, action_list, action):
     if action in action_list:
         index = action_list.index(action)
-        symbol = 'drink_replace_number_' + str(index)
+        symbol = 'action_replace_number_' + str(index)
         out = model.most_similar(positive=[symbol], topn=100000)
         for x in out:
             l = x[0].split('_')
