@@ -59,7 +59,7 @@ class Document():
         else:
             i = 0
             for action in self.action_list:
-                action_symbol = 'drink_replace_number_' + str(i)
+                action_symbol = 'action_replace_number_' + str(i)
                 words, indexes = self.get_words_around_word(action_symbol, window)
                 self.words_around_actions[action] = words
                 self.indexes_around_actions[action] = indexes
@@ -135,40 +135,60 @@ class Document():
         '''
         print(sorted(self.words_around_actions[action].items(), key = lambda x: x[1]))
 
-    def replace_actions(self, window=5):
+    def replace_actions(self, target_verb, window=5):
+        '''
+        Args:
+            target: 周辺語を取得する対象語．'飲む'等の動詞を想定．
+            window: windowサイズ
+        '''
         replace_dict = self.make_replace_dict()
+        # target_verbをキーワードから除く
+        for symbol, keywords in replace_dict.items():
+            if target_verb in keywords:
+                keywords.remove(target_verb)
+
+
         # 置換するターゲットを記憶する
         replace_targets = {}
-        self.document = [['天気', 'が', '良い', 'ので', 'ちょっと', '出かけて', '飲む', 'こと', 'する'],
+        self.document = [['天気', 'が', '良い', 'ので', '一', '人', 'で', 'ちょっと', '出かけて', '飲む', 'こと', 'する'],
                             ['さあ', '親', 'と', 'ちょっと', '飲む']]
 
-        # 一時的に除外
-        del replace_dict['drink_replace_number_18']
-        del replace_dict['drink_replace_number_23']
-        del replace_dict['drink_replace_number_30']
-        del replace_dict['drink_replace_number_37']
-        del replace_dict['drink_replace_number_42']
-
-        words, indexes = self.get_words_around_word('飲む', window)
+        words, indexes = self.get_words_around_word(target_verb, window)
         for key, index in indexes.items():
             sen_i, target_id = map(int, key.split(':'))
-            for i in index:
-                for symbol, keyword in replace_dict.items():
-                    if self.document[sen_i][i] == keyword[0]:
-                        # 辞書にある語があれば記号に置き換え
+            for symbol, keywords in replace_dict.items():
+                # keywordがすべて含まれていれば置換する
+                keywords_in = True
+                temp = []
+                for keyword in keywords:
+                    if not keywords_in:
+                        break
+                    for i in index:
+                        if self.document[sen_i][i] == keyword:
+                            temp.append(i)
+                            keywords_in = True
+                            break
+                        else:
+                            keywords_in = False
+
+                if keywords_in:
+                    for i in temp:
+                        # 記号に置換
                         self.document[sen_i][i] = symbol
 
-                        if symbol in replace_targets:
-                            replace_targets[symbol].append([sen_i, target_id])
-                        else:
-                            replace_targets[symbol] = [[sen_i, target_id]]
+                    if symbol in replace_targets:
+                        replace_targets[symbol].append([sen_i, target_id])
+                    else:
+                        replace_targets[symbol] = [[sen_i, target_id]]
+                else:
+                    continue
 
         for symbol, targets in replace_targets.items():
             for target in targets:
                 s_i, t_i = int(target[0]), int(target[1])
 
-                if self.document[s_i][t_i] == '飲む':
-                    # 「飲む」消去
+                if self.document[s_i][t_i] == target_verb:
+                    # target消去
                     self.document[s_i].pop(t_i)
 
                 self.document[s_i].insert(t_i, symbol)
@@ -195,7 +215,7 @@ class Document():
                     else:
                         values.append(arr[6])
                 res = res.next
-            key = 'drink_replace_number_' + str(index)
+            key = 'action_replace_number_' + str(index)
             replace_dict[key] = values
             index += 1
 
@@ -228,7 +248,8 @@ class Document():
 if __name__ == '__main__':
     doc = Document()
     doc.read_action_list('./act-drink.txt')
-    dic = doc.make_replace_dict()
+    doc.replace_actions('飲む', 5)
+    print(doc.document)
     exit()
     doc.read_document('./docs/tabelog/1_1_tabe_data.txt')
     # doc.replace_actions_symbols(15)
