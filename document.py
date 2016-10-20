@@ -24,6 +24,33 @@ class Document():
             self.document.append(sentence)
         f.close()
 
+    def make_document(self, filename):
+        '''
+        Args:
+            filename: str
+                文書ファイル(分かち書きされていない)
+
+        名詞，動詞，形容詞，副詞のみ
+        原形で
+        '''
+        mt = MeCab.Tagger("-Ochasen")
+        f = open(filename, 'r')
+        for line in f:
+            sentence = []
+            line = line.replace('\n', '')
+            res = mt.parseToNode(line)
+            while res:
+                arr = res.feature.split(",")
+                if arr[0] == '名詞' or arr[0] == '動詞' or arr[0] == '副詞' or arr[0] == '形容詞':
+                    if arr[6] == '*':
+                        sentence.append(res.surface)
+                    else:
+                        sentence.append(arr[6])
+                res = res.next
+            print(sentence)
+            self.document.append(sentence)
+        f.close()
+
     def read_action_list(self, filename):
         '''
         Args:
