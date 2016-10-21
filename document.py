@@ -76,6 +76,7 @@ class Document():
         # 初期化
         self.words_around_actions = {}
         self.indexes_around_actions = {}
+        self.replace_flg = 1
 
         # 行動を記号で置き換えている時の対応
         if not self.replace_flg:
@@ -87,9 +88,11 @@ class Document():
             i = 0
             for action in self.action_list:
                 action_symbol = 'action_replace_number_' + str(i)
+                print(action_symbol)
                 words, indexes = self.get_words_around_word(action_symbol, window)
                 self.words_around_actions[action] = words
                 self.indexes_around_actions[action] = indexes
+                i+=1
 
 
     def get_words_around_word(self, target, window=5):
@@ -282,20 +285,23 @@ class Document():
         return results
 
 if __name__ == '__main__':
+    # doc = Document()
+    # doc.read_action_list('./act-drink.txt')
+    # doc.read_document('./docs/tabelog/drink/reviews_by_normal_query_all_divided.txt')
+    # doc.replace_actions('飲む', 15)
+    # doc.write_document('./docs/tabelog/drink/replace_15.txt')
+    # exit()
+
     doc = Document()
     doc.read_action_list('./act-drink.txt')
-    doc.read_document('./docs/tabelog/1_1_tabe_data.txt')
-    doc.replace_actions('飲む', 15)
-    print(doc.document)
-    exit()
-    # doc.replace_actions_symbols(15)
-    # doc.write_document('./docs/tabelog/1_1_tabe_data_replace.txt')
-    # print(doc.get_around_words('ちょっと飲む', 5))
+    doc.read_document('./docs/tabelog/drink/replace_cut_15.txt')
     doc.get_words_around_actions(15)
-    # print(doc.around_actions)
+    # print(len(doc.words_around_actions))
+    print('done')
     for query in sys.stdin:
         action = query.replace('\n', '')
         doc.show_words_around_action(action)
+    exit()
 
     # 周辺語を書き込む
     # doc.read_texts('./docs/1_1_data.txt')
