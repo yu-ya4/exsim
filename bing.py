@@ -111,33 +111,31 @@ class Bing():
 if __name__ == '__main__':
 
     action_list = []
-    f = open('./actions.txt', 'r')
+    f = open('./act-drink.txt', 'r')
     for line in f:
         action = line.replace('\n', '')
-        action = '"' + action + '"'
+        action = action
         action_list.append(action)
     f.close()
 
-    exit()
-    
     bing = Bing()
     index = 0
     all_texts = ""
     for action in action_list:
-        results = bing.get_tabelog_reviews(action, 50)
+        results = bing.get_tabelog_reviews(action, 100)
         texts = ""
         for result in results:
             text = result.replace('\n', '')
             # print(result)
             texts += text + '\n'
-        f = open('./docs/tabelog/0_%s.txt' % (str(index)), 'w')
+        f = open('./docs/tabelog/drink/reviews_by_normal_query_%s.txt' % (str(index)), 'w')
         f.write(texts)
         f.close()
         print(index)
         index += 1
         all_texts += texts
 
-    fa = open('./docs/tabelog/0_all.txt', 'w')
+    fa = open('./docs/tabelog/drink/reviews_by_nomal_query_all.txt', 'w')
     fa.write(all_texts)
     fa.close()
     exit()
