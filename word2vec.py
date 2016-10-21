@@ -42,30 +42,56 @@ def get_similar_actions(model, action_list, action):
 
         return result
 
+def get_similar_actions_symbol(model, action_list, action):
+    results = []
+
+    if action in action_list:
+        index = action_list.index(action)
+        symbol = 'action_replace_number_' + str(index)
+        try:
+            out = model.most_similar(positive=[symbol], topn=100000)
+            for x in out:
+                l = x[0].split('_')
+                if len(l) == 4:
+                    if l[3] != '':
+                        act_i = int(l[3])
+                        results.append([action_list[act_i], x[1]])
+        except:
+            results.append([])
+
+    else:
+        print('There is not such action.')
+
+    return results
+
 if __name__ == '__main__':
 
+    # data = word2vec.Text8Corpus('./docs/tabelog/drink/replace_5.txt')
+    # model = word2vec.Word2Vec(data, size=200, window=15)
+    # model.save('./models/tabelog/drink/replace_5_15.model')
+    # exit()
+
     action_list = []
-    f = open('./actions.txt', 'r')
+    f = open('./act-drink.txt', 'r')
     for line in f:
         action = line.replace('\n', '')
         action_list.append(action)
     f.close()
 
-    model = word2vec.Word2Vec.load('./models/1_1_tabe_replace.model')
+    model = word2vec.Word2Vec.load('./models/tabelog/drink/replace_15_15.model')
 
     for action in action_list:
-        results = get_similar_actions(model, action_list, action)
+        results = get_similar_actions_symbol(model, action_list, action)
 
-        filename = './result/0_0_tabe/' + action + '.txt'
+        filename = './result/tabelog/drink/replace_15_15/' + action + '.txt'
         f_r = open(filename, 'w')
-        for result in results:
-            line = result[0] + ':' + str(result[1]) + '\n'
-            f_r.write(line)
+        if results[0]:
+            for result in results:
+                line = result[0] + ':' + str(result[1]) + '\n'
+                f_r.write(line)
         f_r.close()
-
-
-
     exit()
+
     for query in sys.stdin:
         action = query.replace('\n', '')
         show_similar_actions_symbol(model, action_list, action)
