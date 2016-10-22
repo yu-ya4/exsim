@@ -88,7 +88,6 @@ class Document():
             i = 0
             for action in self.action_list:
                 action_symbol = 'action_replace_number_' + str(i)
-                print(action_symbol)
                 words, indexes = self.get_words_around_word(action_symbol, window)
                 self.words_around_actions[action] = words
                 self.indexes_around_actions[action] = indexes
@@ -279,7 +278,7 @@ class Document():
 
     def get_around_action(self, action):
         results = []
-        for word, frequent in sorted(self.around_actions[action].items(), key = lambda x: x[1], reverse=True):
+        for word, frequent in sorted(self.words_around_actions[action].items(), key = lambda x: x[1], reverse=True):
             results.append([word, frequent])
 
         return results
@@ -288,32 +287,34 @@ if __name__ == '__main__':
     # doc = Document()
     # doc.read_action_list('./act-drink.txt')
     # doc.read_document('./docs/tabelog/drink/reviews_by_normal_query_all_divided.txt')
-    # doc.replace_actions('飲む', 15)
-    # doc.write_document('./docs/tabelog/drink/replace_15.txt')
+    # doc.replace_actions('飲む', 5)
+    # doc.write_document('./docs/tabelog/drink/replace_5.txt')
+    # exit()
+    #
+    # doc = Document()
+    # doc.read_action_list('./act-drink.txt')
+    # doc.read_document('./docs/tabelog/drink/replace_cut_15.txt')
+    # doc.get_words_around_actions(15)
+    # # print(len(doc.words_around_actions))
+    # print('done')
+    # for query in sys.stdin:
+    #     action = query.replace('\n', '')
+    #     doc.show_words_around_action(action)
     # exit()
 
+    # 周辺語を書き込む
     doc = Document()
     doc.read_action_list('./act-drink.txt')
-    doc.read_document('./docs/tabelog/drink/replace_cut_15.txt')
+    doc.read_document('./docs/tabelog/drink/replace_15.txt')
     doc.get_words_around_actions(15)
-    # print(len(doc.words_around_actions))
-    print('done')
-    for query in sys.stdin:
-        action = query.replace('\n', '')
-        doc.show_words_around_action(action)
-    exit()
-
-    # 周辺語を書き込む
-    # doc.read_texts('./docs/1_1_data.txt')
-    # doc.get_around_actions(15)
-    # for action in doc.action_list:
-    #     filename = './result/1_1_drink/' + action + '_around.txt'
-    #     result = doc.get_around_action(action)
-    #     f_w = open(filename, 'w')
-    #     for r in result:
-    #         line = r[0] + ':' + str(r[1]) + '\n'
-    #         f_w.write(line)
-    #     f_w.close()
+    for action in doc.action_list:
+        filename = './result/tabelog/drink/replace_15_15/' + action + '_around.txt'
+        result = doc.get_around_action(action)
+        f_w = open(filename, 'w')
+        for r in result:
+            line = r[0] + ':' + str(r[1]) + '\n'
+            f_w.write(line)
+        f_w.close()
     exit()
     print(sorted(doc.around_actions['ちょっと飲む'].items(), key = lambda x: x[1]))
     exit()
