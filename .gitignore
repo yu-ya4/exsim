@@ -9,3 +9,4 @@ fetched_pages/
 *.model
 gensimPy3
 .*
+*.xlsx
