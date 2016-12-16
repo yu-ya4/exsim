@@ -3,7 +3,6 @@ __pycache__
 *.pyc
 constants.py
 fetched_pages/
-*.txt
 *.dic
 *.csv
 *.model
