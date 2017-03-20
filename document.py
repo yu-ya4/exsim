@@ -47,7 +47,7 @@ class Document():
                     else:
                         sentence.append(arr[6])
                 res = res.next
-            print(sentence)
+            # print(sentence)
             self.document.append(sentence)
         f.close()
 

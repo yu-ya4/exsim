@@ -66,24 +66,24 @@ def get_similar_actions_symbol(model, action_list, action):
 
 if __name__ == '__main__':
 
-    # data = word2vec.Text8Corpus('./docs/tabelog/drink/replace_5.txt')
+    # data = word2vec.Text8Corpus('../act-geo-matrix/reviews/search_test/all_bodies_replaced_100.txt')
     # model = word2vec.Word2Vec(data, size=200, window=15)
-    # model.save('./models/tabelog/drink/replace_5_15.model')
+    # model.save('./models/tabelog/drink/extended_actions_100.model')
     # exit()
 
     action_list = []
-    f = open('./act-drink.txt', 'r')
+    f = open('../act-geo-matrix/actions/action_飲む_extended.txt', 'r')
     for line in f:
         action = line.replace('\n', '')
         action_list.append(action)
     f.close()
 
-    model = word2vec.Word2Vec.load('./models/tabelog/drink/replace_15_15.model')
+    model = word2vec.Word2Vec.load('./models/tabelog/drink/extended_actions_100.model')
 
     for action in action_list:
         results = get_similar_actions_symbol(model, action_list, action)
 
-        filename = './result/tabelog/drink/replace_15_15/' + action + '.txt'
+        filename = '../act-geo-matrix/actions/similarities_100/' + action + '.txt'
         f_r = open(filename, 'w')
         if results[0]:
             for result in results:
