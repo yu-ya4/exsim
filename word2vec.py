@@ -66,10 +66,11 @@ def get_similar_actions_symbol(model, action_list, action):
 
 if __name__ == '__main__':
 
-    # data = word2vec.Text8Corpus('../act-geo-matrix/reviews/search_test/all_bodies_replaced_100.txt')
+    # data = word2vec.Text8Corpus('../act-geo-matrix/reviews/yolp/kyoto/all_bodies_replaced_100.txt')
     # model = word2vec.Word2Vec(data, size=200, window=15)
-    # model.save('./models/tabelog/drink/extended_actions_100.model')
+    # model.save('./models/yolp/kyoto/extended_actions_100.model')
     # exit()
+
 
     action_list = []
     f = open('../act-geo-matrix/actions/action_飲む_extended.txt', 'r')
@@ -78,12 +79,12 @@ if __name__ == '__main__':
         action_list.append(action)
     f.close()
 
-    model = word2vec.Word2Vec.load('./models/tabelog/drink/extended_actions_100.model')
+    model = word2vec.Word2Vec.load('./models/yolp/kyoto/extended_actions_100.model')
 
     for action in action_list:
         results = get_similar_actions_symbol(model, action_list, action)
 
-        filename = '../act-geo-matrix/actions/similarities_100/' + action + '.txt'
+        filename = '../act-geo-matrix/actions/yolp_similarities_100/' + action + '.txt'
         f_r = open(filename, 'w')
         if results[0]:
             for result in results:

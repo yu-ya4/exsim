@@ -304,11 +304,11 @@ if __name__ == '__main__':
 
     # 周辺語を書き込む
     doc = Document()
-    doc.read_action_list('./act-drink.txt')
-    doc.read_document('./docs/tabelog/drink/replace_15.txt')
+    doc.read_action_list('../act-geo-matrix/actions/action_飲む_extended.txt')
+    doc.read_document('../act-geo-matrix/reviews/search_test/all_bodies_replaced_100.txt')
     doc.get_words_around_actions(15)
     for action in doc.action_list:
-        filename = './result/tabelog/drink/replace_15_15/' + action + '_around.txt'
+        filename = './result/tabelog/drink_extended/' + action + '_around.txt'
         result = doc.get_around_action(action)
         f_w = open(filename, 'w')
         for r in result:
