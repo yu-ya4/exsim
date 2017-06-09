@@ -259,6 +259,29 @@ class Document():
 
         return replace_dict
 
+    def weight_actions(self, num):
+        '''
+        increase the number of action symbols to weight actions
+
+        Args:
+            num: 増やす数
+        Returns:
+            None
+        '''
+        replace_dict = self.make_replace_dict()
+        for key, value in replace_dict.items():
+            sen_i = 0
+            for sentence in self.document:
+                target_indexes = [i for i, w in enumerate(sentence) if w == key]
+                gap = 0
+                for target_index in target_indexes:
+                    for n in range(num):
+                        self.document[sen_i].insert(target_index+gap, key)
+                        gap += 1
+                sen_i += 1
+
+
+
     def write_document(self, filepath):
         '''
         self.documentをテキストファイルに書き出す
