@@ -2,6 +2,7 @@
 
 from gensim.models import word2vec
 import sys
+import os
 
 def show_similar_actions(model, action_list, action):
     if action in action_list:
@@ -66,31 +67,42 @@ def get_similar_actions_symbol(model, action_list, action):
 
 if __name__ == '__main__':
 
-    # data = word2vec.Text8Corpus('../act-geo-matrix/reviews/yolp/kyoto/all_bodies_replaced_100.txt')
-    # model = word2vec.Word2Vec(data, size=200, window=15)
-    # model.save('./models/yolp/kyoto/extended_actions_100.model')
-    # exit()
+    r_windows = ['5', '10', '15', '20', '25', '30', '50']
+    # r_window = '5'
+    w_windws = ['5', '10', '15', '20', '30', '40', '50']
 
+    for r_window in r_windows:
+        data = word2vec.Text8Corpus('../act-geo-matrix/reviews/20170607/all_text_飲む_replaced_' + r_window + '_three.txt')
+        for window in w_windws:
+            model = word2vec.Word2Vec(data, size=200, window=window, min_count=5)
+            model.save('./models/20170607/drink_' + r_window + '_three_' + window + '.model')
 
     action_list = []
-    f = open('../act-geo-matrix/actions/action_飲む_extended.txt', 'r')
+    f = open('../act-geo-matrix/actions/20170607飲むcut.txt', 'r')
     for line in f:
         action = line.replace('\n', '')
         action_list.append(action)
     f.close()
+    for r_window in r_windows:
+        for window in w_windws:
+            model = word2vec.Word2Vec.load('./models/20170607/drink_' + r_window + '_three_' + window + '.model')
 
-    model = word2vec.Word2Vec.load('./models/yolp/kyoto/extended_actions_100.model')
+            file_dir = '../act-geo-matrix/actions/similarity20170607/drink_' + r_window + '_three_' + window + '/'
+            if not os.path.exists(file_dir):
+                os.makedirs(file_dir)
 
-    for action in action_list:
-        results = get_similar_actions_symbol(model, action_list, action)
-
-        filename = '../act-geo-matrix/actions/yolp_similarities_100/' + action + '.txt'
-        f_r = open(filename, 'w')
-        if results[0]:
-            for result in results:
-                line = result[0] + ':' + str(result[1]) + '\n'
-                f_r.write(line)
-        f_r.close()
+            for action in action_list:
+                results = get_similar_actions_symbol(model, action_list, action)
+                filename = file_dir + action + '.txt'
+                try:
+                    f_r = open(filename, 'w')
+                    if results[0]:
+                        for result in results:
+                            line = result[0] + ':' + str(result[1]) + '\n'
+                            f_r.write(line)
+                    f_r.close()
+                except:
+                    continue
     exit()
 
     for query in sys.stdin:
