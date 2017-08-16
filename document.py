@@ -2,6 +2,9 @@
 
 import MeCab
 import sys
+import traceback
+import MySQLdb
+from configparser import ConfigParser
 
 class Document():
     def __init__(self):
@@ -10,6 +13,59 @@ class Document():
         self.indexes_around_actions = {}
         self.action_list = []
         self.replace_flg = 0
+
+    def make_text_file_from_database(self, mode, output_filename):
+        '''
+        make text file from database
+
+        Args:
+            mode: int
+                0 -> reviews, 1 -> restaurant prs, 2-> reviews and restaurant prs
+            output_filename: str
+        '''
+
+        try:
+            env = ConfigParser()
+            env.read('./.env')
+            db_connection = MySQLdb.connect(host=env.get('mysql', 'HOST'), user=env.get('mysql', 'USER'), passwd=env.get('mysql', 'PASSWD'), db=env.get('mysql', 'DATABASE'), charset=env.get('mysql', 'CHARSET'))
+            cursor = db_connection.cursor()
+
+            review_sql = 'SELECT id, title, body FROM reviews;'
+            restaurant_pr_sql = 'SELECT id, pr_comment_title, pr_comment_body FROM restaurants;'
+
+            if mode == 0:
+                cursor.execute(review_sql)
+                result = cursor.fetchall()
+            elif mode == 1:
+                cursor.execute(restaurant_pr_sql)
+                result = cursor.fetchall()
+            elif mode ==2:
+                cursor.execute(review_sql)
+                result = cursor.fetchall()
+                cursor.execute(restaurant_pr_sql)
+                result += cursor.fetchall()
+            else:
+                cursor.close()
+                db_connection.close()
+                return print('unexpected input: mode')
+
+            with open(output_filename, 'a') as f:
+                for row in result:
+                    title = '' if row[1] is None or row[1] == '' else (row[1] + '\n')
+                    body = '' if row[2] is None or row[2] == '' else (row[2] + '\n')
+                    line = title + body
+                    f.write(line)
+
+        except MySQLdb.Error as e:
+            print('MySQLdb.Error: ', e)
+
+        except Exception as e:
+            traceback.print_exc()
+            print(e)
+
+        cursor.close()
+        db_connection.close()
+
 
     def read_document(self, filename):
         '''
