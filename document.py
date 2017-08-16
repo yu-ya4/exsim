@@ -336,7 +336,28 @@ class Document():
                         gap += 1
                 sen_i += 1
 
+    def weight_words(self, num, words):
+        '''
+        increase the number of action symbols to weight actions
 
+        Args:
+            num: int
+                増やす数
+            words: list[str]
+                増やす単語
+        Returns:
+            None
+        '''
+        for word in words:
+            sen_i = 0
+            for sentence in self.document:
+                target_indexes = [i for i, w in enumerate(sentence) if w == word]
+                gap = 0
+                for target_index in target_indexes:
+                    for n in range(num):
+                        self.document[sen_i].insert(target_index+gap, word)
+                        gap += 1
+                sen_i += 1
 
     def write_document(self, filepath):
         '''
@@ -395,7 +416,7 @@ if __name__ == '__main__':
             f_w.write(line)
         f_w.close()
     exit()
-    print(sorted(doc.around_actions['ちょっと飲む'].items(), key = lambda x: x[1]))
+    print(sorted(doc.words_around_actions['ちょっと'].items(), key = lambda x: x[1]))
     exit()
     print('\n')
     print(doc.around_actions_indexes)
