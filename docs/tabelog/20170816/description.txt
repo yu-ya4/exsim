@@ -1,9 +1,0 @@
-reviews.txt: レビュー文 タイトル＋本文
-restaurant_prs.txt: レストランのpr文 タイトル＋本文
-reviews_and_restaurant_prs.txt: レビュー文とレストランのpr文 タイトル＋本文
-
-reviews_divided.txt: reviews.txtを分かち書き．「名詞」，「動詞」，「副詞」，「形容詞」のみを取り出し原形に戻したもの．
-
-reviews_actions_{actionfilename}_replaced_{n}.txt: reviews_divided.txtで「飲む」の周りn語にある，{actionfilename}.txt内の経験をなす語を記号に置き換えたもの
-
-reviews_actions_{actionfilename}_replaced_{n}_{m}.txt: ews_actions_{actionfilename}_replaced_{n}.txt 内の経験を表す記号をm個ずつ増やしたもの．
