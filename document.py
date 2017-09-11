@@ -2,17 +2,48 @@
 
 import MeCab
 import sys
-import traceback
 import MySQLdb
-from configparser import ConfigParser
+import os
+import traceback
+import sys
+sys.path.append('../act-geo-matrix')
+from experience import Experience, Experiences
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
 
 class Document():
     def __init__(self):
         self.document = []
-        self.words_around_actions = {}
-        self.indexes_around_actions = {}
-        self.action_list = []
+        self.words_around_experiences = {}
+        self.indexes_around_experiences = {}
+        self.experiences = Experiences()
         self.replace_flg = 0
+
+    def get_db_connection(self, db='ieyasu'):
+        '''
+        Get database connection
+
+        Args:
+            db: str
+                local
+                ieyasu
+                ieyasu-berry
+        '''
+        try:
+            if db == 'local':
+                return MySQLdb.connect(host=os.environ.get('LOCAL_DB_HOST'), user=os.environ.get('LOCAL_DB_USER'), passwd=os.environ.get('LOCAL_DB_PASSWD'), db=os.environ.get('LOCAL_DB_DATABASE'), charset=os.environ.get('CHARSET'))
+            elif db == 'ieyasu':
+                return MySQLdb.connect(host=os.environ.get('IEYASU_DB_HOST'), user=os.environ.get('IEYASU_DB_USER'), passwd=os.environ.get('IEYASU_DB_PASSWD'), db=os.environ.get('IEYASU_DB_DATABASE'), charset=os.environ.get('CHARSET'), port=int(os.environ.get('IEYASU_DB_PORT')))
+            elif db == 'ieyasu-berry':
+                return MySQLdb.connect(host=os.environ.get('IEYASU_DB_HOST'), user=os.environ.get('IEYASU_DB_USER'), passwd=os.environ.get('IEYASU_DB_PASSWD'), db=os.environ.get('IEYASU_DB_DATABASE'), charset=os.environ.get('CHARSET'), port=int(os.environ.get('IEYASU_BERRY_DB_PORT')))
+            elif db == 'ieyasu-local':
+                return MySQLdb.connect(host=os.environ.get('IEYASU_DB_HOST'), user=os.environ.get('IEYASU_DB_USER'), passwd=os.environ.get('IEYASU_DB_PASSWD'), db=os.environ.get('IEYASU_DB_DATABASE'), charset=os.environ.get('CHARSET'))
+            else:
+                print('Error: please select correct database')
+                exit()
+        except MySQLdb.Error as e:
+            print('MySQLdb.Error: ', e)
+            exit()
 
     def make_text_file_from_database(self, mode, output_filename):
         '''
@@ -25,9 +56,7 @@ class Document():
         '''
 
         try:
-            env = ConfigParser()
-            env.read('./.env')
-            db_connection = MySQLdb.connect(host=env.get('mysql', 'HOST'), user=env.get('mysql', 'USER'), passwd=env.get('mysql', 'PASSWD'), db=env.get('mysql', 'DATABASE'), charset=env.get('mysql', 'CHARSET'))
+            db_connection = self.get_db_connection()
             cursor = db_connection.cursor()
 
             review_sql = 'SELECT id, title, body FROM reviews;'
@@ -107,46 +136,57 @@ class Document():
             self.document.append(sentence)
         f.close()
 
-    def read_action_list(self, filename):
+    def read_experience_list(self, label):
         '''
         Args:
-            filename: str
-                一行につき一行動が記されたテキストファイル
+            label: str
         '''
-        self.action_list = []
-        f = open(filename, 'r')
-        for line in f:
-            action = line.replace('\n', '')
-            self.action_list.append(action)
-        f.close()
+        self.experiences.__init__()
+        self.experiences.read_experiences_from_database('chie-extracted2')
 
-    def get_words_around_actions(self, window=5):
+    def get_words_around_experiences(self, window=5):
         '''
         リスト中の行動の周辺語を得る
-            ex.) self.words_around_actions['ゆっくり飲む'] = {'バー': 10, ...}
+            ex.) self.words_around_experiences['ゆっくり飲む'] = {'バー': 10, ...}
 
         Args:
             window: int
                 周辺語をとるサイズ
         '''
         # 初期化
-        self.words_around_actions = {}
-        self.indexes_around_actions = {}
+        self.words_around_experiences = {}
+        self.indexes_around_experiences = {}
         self.replace_flg = 1
 
         # 行動を記号で置き換えている時の対応
+        # if not self.replace_flg:
+        #     for action in self.action_list:
+        #         words, indexes = self.get_words_around_word(action, window)
+        #         self.words_around_actions[action] = words
+        #         self.indexes_around_actions[action] = indexes
+        # else:
+        #     i = 0
+        #     for action in self.action_list:
+        #         action_symbol = 'action_replace_number_' + str(i)
+        #         words, indexes = self.get_words_around_word(action_symbol, window)
+        #         self.words_around_actions[action] = words
+        #         self.indexes_around_actions[action] = indexes
+        #         i+=1
+
         if not self.replace_flg:
-            for action in self.action_list:
-                words, indexes = self.get_words_around_word(action, window)
-                self.words_around_actions[action] = words
-                self.indexes_around_actions[action] = indexes
+            for experience in self.experiences.experiences:
+                mod = experience.modifiers[0]
+                words, indexes = self.get_words_around_word(mod, window)
+                self.words_around_experiences[mod] = words
+                self.indexes_around_experiences[mod] = indexes
         else:
             i = 0
-            for action in self.action_list:
-                action_symbol = 'action_replace_number_' + str(i)
-                words, indexes = self.get_words_around_word(action_symbol, window)
-                self.words_around_actions[action] = words
-                self.indexes_around_actions[action] = indexes
+            for experience in self.experiences.experiences:
+                mod = experience.modifiers[0]
+                experience_symbol = 'experience_replace_number_' + str(i)
+                words, indexes = self.get_words_around_word(experience_symbol, window)
+                self.words_around_experiences[mod] = words
+                self.indexes_around_experiences[mod] = indexes
                 i+=1
 
 
@@ -212,15 +252,15 @@ class Document():
 
         return words_around_word, indexes_around_word
 
-    def show_words_around_action(self, action):
+    def show_words_around_experience(self, mod):
         '''
         特定の行動名の周辺語を出現頻度順に表示させる
         Args:
-            action: 行動名
+            mod: str
         '''
-        print(sorted(self.words_around_actions[action].items(), key = lambda x: x[1]))
+        print(sorted(self.words_around_experiences[mod].items(), key = lambda x: x[1]))
 
-    def replace_actions(self, target_verb, window=5):
+    def replace_experiences(self, target_verb, window=5):
         '''
         Args:
             target: 周辺語を取得する対象語．'飲む'等の動詞を想定．
@@ -298,8 +338,8 @@ class Document():
         replace_dict = {}
         mt = MeCab.Tagger("-Ochasen")
         index = 0
-        for action in self.action_list:
-            res = mt.parseToNode(action)
+        for experience in self.experiences.experiences:
+            res = mt.parseToNode(experience.verb + experience.modifiers[0])
             values = []
             while res:
                 arr = res.feature.split(",")
@@ -309,15 +349,15 @@ class Document():
                     else:
                         values.append(arr[6])
                 res = res.next
-            key = 'action_replace_number_' + str(index)
+            key = 'experience_replace_number_' + str(index)
             replace_dict[key] = values
             index += 1
 
         return replace_dict
 
-    def weight_actions(self, num):
+    def weight_experiences(self, num):
         '''
-        increase the number of action symbols to weight actions
+        increase the number of experience symbols to weight experiences
 
         Args:
             num: 増やす数
@@ -376,9 +416,9 @@ class Document():
         f.close()
 
 
-    def get_around_action(self, action):
+    def get_around_experience(self, mod):
         results = []
-        for word, frequent in sorted(self.words_around_actions[action].items(), key = lambda x: x[1], reverse=True):
+        for word, frequent in sorted(self.words_around_experiences[mod].items(), key = lambda x: x[1], reverse=True):
             results.append([word, frequent])
 
         return results
