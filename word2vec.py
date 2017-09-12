@@ -3,6 +3,10 @@
 from gensim.models import word2vec
 import sys
 import os
+sys.path.append('../act-geo-matrix')
+from experience import Experience, Experiences
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
 
 def show_similar_actions(model, action_list, action):
     if action in action_list:
@@ -43,20 +47,20 @@ def get_similar_actions(model, action_list, action):
 
         return result
 
-def get_similar_actions_symbol(model, action_list, action):
+def get_similar_experience_symbols(model, experiences, verb, modifiers):
     results = []
 
-    if action in action_list:
-        index = action_list.index(action)
-        symbol = 'action_replace_number_' + str(index)
+    index = experiences.get_index(verb, modifiers)
+    if index is not None:
+        symbol = 'experience_replace_number_' + str(index)
         try:
-            out = model.most_similar(positive=[symbol], topn=100000)
+            out = model.most_similar(positive=[symbol], topn=1000000)
             for x in out:
                 l = x[0].split('_')
                 if len(l) == 4:
                     if l[3] != '':
-                        act_i = int(l[3])
-                        results.append([action_list[act_i], x[1]])
+                        exp_i = int(l[3])
+                        results.append([experiences.experiences[exp_i].modifiers[0], x[1]])
         except:
             results.append([])
 
@@ -67,33 +71,34 @@ def get_similar_actions_symbol(model, action_list, action):
 
 if __name__ == '__main__':
 
-    r_windows = ['5', '10', '15', '20', '25', '30', '50']
+    # r_windows = ['5', '10', '15', '20', '25', '30', '50']
+    r_windows = ['10']
     # r_window = '5'
-    w_windws = ['5', '10', '15', '20', '30', '40', '50']
+    # w_windws = ['5', '10', '15', '20', '30', '40', '50']
+    w_windws = ['5', '10', '15']
+    # w_windws = ['5']
+
+    #
+    # for r_window in r_windows:
+    #     data = word2vec.Text8Corpus('../../data/docs/test/test-divided-replaced-10.txt')
+    #     for window in w_windws:
+    #         model = word2vec.Word2Vec(data, size=200, window=int(window), min_count=5)
+    #         model.save('../../data/models/test/drink_' + r_window + '_' + window + '_three.model')
+    # exit()
+
+    experiences = Experiences()
+    experiences.read_experiences_from_database('chie-extracted2')
 
     for r_window in r_windows:
-        data = word2vec.Text8Corpus('../act-geo-matrix/reviews/20170607/all_text_飲む_replaced_' + r_window + '_three.txt')
         for window in w_windws:
-            model = word2vec.Word2Vec(data, size=200, window=window, min_count=5)
-            model.save('./models/20170607/drink_' + r_window + '_three_' + window + '.model')
-
-    action_list = []
-    f = open('../act-geo-matrix/actions/20170607飲むcut.txt', 'r')
-    for line in f:
-        action = line.replace('\n', '')
-        action_list.append(action)
-    f.close()
-    for r_window in r_windows:
-        for window in w_windws:
-            model = word2vec.Word2Vec.load('./models/20170607/drink_' + r_window + '_three_' + window + '.model')
-
-            file_dir = '../act-geo-matrix/actions/similarity20170607/drink_' + r_window + '_three_' + window + '/'
+            model = word2vec.Word2Vec.load('../../data/models/test/drink_' + r_window + '_' + window + '_three.model')
+            file_dir = '../../data/similarities/test/drink_' + r_window + '_' + window + '_three/'
             if not os.path.exists(file_dir):
                 os.makedirs(file_dir)
 
-            for action in action_list:
-                results = get_similar_actions_symbol(model, action_list, action)
-                filename = file_dir + action + '.txt'
+            for experience in experiences.experiences:
+                results = get_similar_experience_symbols(model, experiences, experience.verb, experience.modifiers)
+                filename = file_dir + experience.modifiers[0] + '.txt'
                 try:
                     f_r = open(filename, 'w')
                     if results[0]:
