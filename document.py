@@ -158,21 +158,6 @@ class Document():
         self.indexes_around_experiences = {}
         self.replace_flg = 1
 
-        # 行動を記号で置き換えている時の対応
-        # if not self.replace_flg:
-        #     for action in self.action_list:
-        #         words, indexes = self.get_words_around_word(action, window)
-        #         self.words_around_actions[action] = words
-        #         self.indexes_around_actions[action] = indexes
-        # else:
-        #     i = 0
-        #     for action in self.action_list:
-        #         action_symbol = 'action_replace_number_' + str(i)
-        #         words, indexes = self.get_words_around_word(action_symbol, window)
-        #         self.words_around_actions[action] = words
-        #         self.indexes_around_actions[action] = indexes
-        #         i+=1
-
         if not self.replace_flg:
             for experience in self.experiences.experiences:
                 mod = experience.modifiers[0]
