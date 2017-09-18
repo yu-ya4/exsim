@@ -6,7 +6,7 @@ import MySQLdb
 import os
 import traceback
 import sys
-sys.path.append('../act-geo-matrix')
+sys.path.append('../experience-geo-matrix')
 from experience import Experience, Experiences
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
