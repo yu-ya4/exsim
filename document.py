@@ -142,7 +142,7 @@ class Document():
             label: str
         '''
         self.experiences.__init__()
-        self.experiences.read_experiences_from_database('chie-extracted2')
+        self.experiences.read_experiences_from_database('ieyasu', 'chie-extracted2')
 
     def get_words_around_experiences(self, window=5):
         '''
@@ -160,14 +160,14 @@ class Document():
 
         if not self.replace_flg:
             for experience in self.experiences.experiences:
-                mod = experience.modifiers[0]
+                mod = experience.modifier
                 words, indexes = self.get_words_around_word(mod, window)
                 self.words_around_experiences[mod] = words
                 self.indexes_around_experiences[mod] = indexes
         else:
             i = 0
             for experience in self.experiences.experiences:
-                mod = experience.modifiers[0]
+                mod = experience.modifier
                 experience_symbol = 'experience_replace_number_' + str(i)
                 words, indexes = self.get_words_around_word(experience_symbol, window)
                 self.words_around_experiences[mod] = words
@@ -324,7 +324,7 @@ class Document():
         mt = MeCab.Tagger("-Ochasen")
         index = 0
         for experience in self.experiences.experiences:
-            res = mt.parseToNode(experience.verb + experience.modifiers[0])
+            res = mt.parseToNode(experience.verb + experience.modifier)
             values = []
             while res:
                 arr = res.feature.split(",")
