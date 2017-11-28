@@ -3,7 +3,7 @@
 from gensim.models import word2vec
 import sys
 import os
-sys.path.append('../act-geo-matrix')
+sys.path.append('../experience-geo-matrix')
 from experience import Experience, Experiences
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
@@ -47,10 +47,10 @@ def get_similar_actions(model, action_list, action):
 
         return result
 
-def get_similar_experience_symbols(model, experiences, verb, modifiers):
+def get_similar_experience_symbols(model, experiences, verb, modifier):
     results = []
 
-    index = experiences.get_index(verb, modifiers)
+    index = experiences.get_index(verb, modifier)
     if index is not None:
         symbol = 'experience_replace_number_' + str(index)
         try:
@@ -60,7 +60,7 @@ def get_similar_experience_symbols(model, experiences, verb, modifiers):
                 if len(l) == 4:
                     if l[3] != '':
                         exp_i = int(l[3])
-                        results.append([experiences.experiences[exp_i].modifiers[0], x[1]])
+                        results.append([experiences.experiences[exp_i].modifier, x[1]])
         except:
             results.append([])
 
@@ -78,27 +78,26 @@ if __name__ == '__main__':
     w_windws = ['5', '10', '15']
     # w_windws = ['5']
 
-    #
     # for r_window in r_windows:
-    #     data = word2vec.Text8Corpus('../../data/docs/test/test-divided-replaced-10.txt')
+    #     data = word2vec.Text8Corpus('../../data/docs/0918/reviews_replaced_' + r_window + '.txt')
     #     for window in w_windws:
-    #         model = word2vec.Word2Vec(data, size=200, window=int(window), min_count=5)
-    #         model.save('../../data/models/test/drink_' + r_window + '_' + window + '_three.model')
+    #         model = word2vec.Word2Vec(data, size=200, window=int(window), min_count=10)
+    #         model.save('../../data/models/0918/reviews_' + r_window + '_' + window + '_200_10.model')
     # exit()
 
     experiences = Experiences()
-    experiences.read_experiences_from_database('chie-extracted2')
+    experiences.read_experiences_from_database('ieyasu', 'chie-extracted2')
 
     for r_window in r_windows:
         for window in w_windws:
-            model = word2vec.Word2Vec.load('../../data/models/test/drink_' + r_window + '_' + window + '_three.model')
-            file_dir = '../../data/similarities/test/drink_' + r_window + '_' + window + '_three/'
+            model = word2vec.Word2Vec.load('../../data/models/0918/reviews_' + r_window + '_' + window + '_200_10.model')
+            file_dir = '../../data/similarities/0918/reviews_' + r_window + '_' + window + '/'
             if not os.path.exists(file_dir):
                 os.makedirs(file_dir)
 
             for experience in experiences.experiences:
-                results = get_similar_experience_symbols(model, experiences, experience.verb, experience.modifiers)
-                filename = file_dir + experience.modifiers[0] + '.txt'
+                results = get_similar_experience_symbols(model, experiences, experience.verb, experience.modifier)
+                filename = file_dir + experience.modifier + '.txt'
                 try:
                     f_r = open(filename, 'w')
                     if results[0]:
