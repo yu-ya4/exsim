@@ -6,8 +6,9 @@ import MySQLdb
 import os
 import traceback
 import sys
-sys.path.append('../experience-geo-matrix')
-from experience import Experience, Experiences
+# sys.path.append('../egmat')
+from egmat.experience import Experience, Experiences
+from .dbconnection import get_db_connection
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
@@ -19,71 +20,47 @@ class Document():
         self.experiences = Experiences()
         self.replace_flg = 0
 
-    def get_db_connection(self, db='ieyasu'):
-        '''
-        Get database connection
-
-        Args:
-            db: str
-                local
-                ieyasu
-                ieyasu-berry
-        '''
-        try:
-            if db == 'local':
-                return MySQLdb.connect(host=os.environ.get('LOCAL_DB_HOST'), user=os.environ.get('LOCAL_DB_USER'), passwd=os.environ.get('LOCAL_DB_PASSWD'), db=os.environ.get('LOCAL_DB_DATABASE'), charset=os.environ.get('CHARSET'))
-            elif db == 'ieyasu':
-                return MySQLdb.connect(host=os.environ.get('IEYASU_DB_HOST'), user=os.environ.get('IEYASU_DB_USER'), passwd=os.environ.get('IEYASU_DB_PASSWD'), db=os.environ.get('IEYASU_DB_DATABASE'), charset=os.environ.get('CHARSET'), port=int(os.environ.get('IEYASU_DB_PORT')))
-            elif db == 'ieyasu-berry':
-                return MySQLdb.connect(host=os.environ.get('IEYASU_DB_HOST'), user=os.environ.get('IEYASU_DB_USER'), passwd=os.environ.get('IEYASU_DB_PASSWD'), db=os.environ.get('IEYASU_DB_DATABASE'), charset=os.environ.get('CHARSET'), port=int(os.environ.get('IEYASU_BERRY_DB_PORT')))
-            elif db == 'ieyasu-local':
-                return MySQLdb.connect(host=os.environ.get('IEYASU_DB_HOST'), user=os.environ.get('IEYASU_DB_USER'), passwd=os.environ.get('IEYASU_DB_PASSWD'), db=os.environ.get('IEYASU_DB_DATABASE'), charset=os.environ.get('CHARSET'))
-            else:
-                print('Error: please select correct database')
-                exit()
-        except MySQLdb.Error as e:
-            print('MySQLdb.Error: ', e)
-            exit()
-
-    def make_text_file_from_database(self, mode, output_filename):
+    def make_text_file_from_database(self, db, mode, conditions, output_filename):
         '''
         make text file from database
 
         Args:
+            db: str
             mode: int
                 0 -> reviews, 1 -> restaurant prs, 2-> reviews and restaurant prs
+            conditions: str
+                where res.pal="kyoto" limit 10
             output_filename: str
         '''
 
         try:
-            db_connection = self.get_db_connection()
+            db_connection = get_db_connection(db)
             cursor = db_connection.cursor()
 
-            review_sql = 'SELECT id, title, body FROM reviews;'
-            restaurant_pr_sql = 'SELECT id, pr_comment_title, pr_comment_body FROM restaurants;'
+            sql = '''
+                SELECT res.restaurant_id, res.pr_comment_title, res.pr_comment_body, rev.id, rev.title, rev.body
+                from restaurants as res left join reviews as rev on res.restaurant_id = rev.restaurant_id
+                '''
+            sql += conditions
 
-            if mode == 0:
-                cursor.execute(review_sql)
-                result = cursor.fetchall()
-            elif mode == 1:
-                cursor.execute(restaurant_pr_sql)
-                result = cursor.fetchall()
-            elif mode ==2:
-                cursor.execute(review_sql)
-                result = cursor.fetchall()
-                cursor.execute(restaurant_pr_sql)
-                result += cursor.fetchall()
-            else:
-                cursor.close()
-                db_connection.close()
-                return print('unexpected input: mode')
+            cursor.execute(sql)
+            result = cursor.fetchall()
 
-            with open(output_filename, 'a') as f:
+            with open(output_filename, 'w') as f:
+                restaurant_id = 0
                 for row in result:
-                    title = '' if row[1] is None or row[1] == '' else (row[1] + '\n')
-                    body = '' if row[2] is None or row[2] == '' else (row[2] + '\n')
-                    line = title + body
-                    f.write(line)
+                    if mode != 0:
+                        if restaurant_id != row[0]:
+                            restaurant_id = row[0]
+                            pr_title = '' if row[1] is None or row[1] == '' else (row[1])
+                            pr_body = '' if row[2] is None or row[2] == '' else (row[2] + '\n')
+                            pr = pr_title + pr_body
+                            f.write(pr)
+                    if mode != 1:
+                        review_title = '' if row[4] is None or row[4] == '' else (row[4])
+                        review_body = '' if row[5] is None or row[5] == '' else (row[5] + '\n')
+                        review = review_title + review_body
+                        f.write(review)
 
         except MySQLdb.Error as e:
             print('MySQLdb.Error: ', e)
