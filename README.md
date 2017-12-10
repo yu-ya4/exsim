@@ -10,13 +10,12 @@
 ## Make text files from DATABASE
 
 ```
-doc = Document()
 # reviews
-doc.make_text_file_from_database(0, '../../data/docs/tabelog/20170816/reviews.txt')
+make_text_file_from_database('ieyasu', 0, 'where res.pal="kyoto" limit 10', '../../data/docs/test/test_reviews.txt')
 # restaurant_prs
-doc.make_text_file_from_database(1, '../../data/docs/tabelog/20170816/restaurant_prs.txt')
+make_text_file_from_database('ieyasu', 1, 'where res.pal="kyoto" limit 10', '../../data/docs/test/test_reviews.txt')
 # reviews and restaurant_prs
-doc.make_text_file_from_database(2, '../../data/docs/tabelog/20170816/reviews_and_restaurant_prs.txt')
+make_text_file_from_database('ieyasu', 2, 'where res.pal="kyoto" limit 10', '../../data/docs/test/test_reviews.txt')
 ```
 
 ## Make divided document

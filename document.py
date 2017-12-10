@@ -12,6 +12,59 @@ from .dbconnection import get_db_connection
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
+
+def make_text_file_from_database(db, mode, conditions, output_filename):
+    '''
+    make text file from database
+
+    Args:
+        db: str
+        mode: int
+            0 -> reviews, 1 -> restaurant prs, 2-> reviews and restaurant prs
+        conditions: str
+            where res.pal="kyoto" limit 10
+        output_filename: str
+    '''
+
+    try:
+        db_connection = get_db_connection(db)
+        cursor = db_connection.cursor()
+
+        sql = '''
+            SELECT res.restaurant_id, res.pr_comment_title, res.pr_comment_body, rev.id, rev.title, rev.body
+            from restaurants as res left join reviews as rev on res.restaurant_id = rev.restaurant_id
+            '''
+        sql += conditions
+
+        cursor.execute(sql)
+        result = cursor.fetchall()
+
+        with open(output_filename, 'w') as f:
+            restaurant_id = 0
+            for row in result:
+                if mode != 0:
+                    if restaurant_id != row[0]:
+                        restaurant_id = row[0]
+                        pr_title = '' if row[1] is None or row[1] == '' else (row[1])
+                        pr_body = '' if row[2] is None or row[2] == '' else (row[2] + '\n')
+                        pr = pr_title + pr_body
+                        f.write(pr)
+                if mode != 1:
+                    review_title = '' if row[4] is None or row[4] == '' else (row[4])
+                    review_body = '' if row[5] is None or row[5] == '' else (row[5] + '\n')
+                    review = review_title + review_body
+                    f.write(review)
+
+    except MySQLdb.Error as e:
+        print('MySQLdb.Error: ', e)
+
+    except Exception as e:
+        traceback.print_exc()
+        print(e)
+
+    cursor.close()
+    db_connection.close()
+
 class Document():
     def __init__(self):
         self.document = []
@@ -20,57 +73,7 @@ class Document():
         self.experiences = Experiences()
         self.replace_flg = 0
 
-    def make_text_file_from_database(self, db, mode, conditions, output_filename):
-        '''
-        make text file from database
 
-        Args:
-            db: str
-            mode: int
-                0 -> reviews, 1 -> restaurant prs, 2-> reviews and restaurant prs
-            conditions: str
-                where res.pal="kyoto" limit 10
-            output_filename: str
-        '''
-
-        try:
-            db_connection = get_db_connection(db)
-            cursor = db_connection.cursor()
-
-            sql = '''
-                SELECT res.restaurant_id, res.pr_comment_title, res.pr_comment_body, rev.id, rev.title, rev.body
-                from restaurants as res left join reviews as rev on res.restaurant_id = rev.restaurant_id
-                '''
-            sql += conditions
-
-            cursor.execute(sql)
-            result = cursor.fetchall()
-
-            with open(output_filename, 'w') as f:
-                restaurant_id = 0
-                for row in result:
-                    if mode != 0:
-                        if restaurant_id != row[0]:
-                            restaurant_id = row[0]
-                            pr_title = '' if row[1] is None or row[1] == '' else (row[1])
-                            pr_body = '' if row[2] is None or row[2] == '' else (row[2] + '\n')
-                            pr = pr_title + pr_body
-                            f.write(pr)
-                    if mode != 1:
-                        review_title = '' if row[4] is None or row[4] == '' else (row[4])
-                        review_body = '' if row[5] is None or row[5] == '' else (row[5] + '\n')
-                        review = review_title + review_body
-                        f.write(review)
-
-        except MySQLdb.Error as e:
-            print('MySQLdb.Error: ', e)
-
-        except Exception as e:
-            traceback.print_exc()
-            print(e)
-
-        cursor.close()
-        db_connection.close()
 
 
     def read_document(self, filename):
