@@ -6,7 +6,6 @@ import MySQLdb
 import os
 import traceback
 import sys
-# sys.path.append('../egmat')
 from egmat.experience import Experience, Experiences
 from .dbconnection import get_db_connection
 from dotenv import load_dotenv, find_dotenv
@@ -19,6 +18,7 @@ def make_text_file_from_database(db, mode, conditions, output_filename):
 
     Args:
         db: str
+            "local", "ieyasu", "ieyasu-berry", "ieyasu-local"
         mode: int
             0 -> reviews, 1 -> restaurant prs, 2-> reviews and restaurant prs
         conditions: str
@@ -40,6 +40,7 @@ def make_text_file_from_database(db, mode, conditions, output_filename):
         result = cursor.fetchall()
 
         with open(output_filename, 'w') as f:
+            # 1行に1地物の店舗情報(title+body) or 1つのレビュー(title+body)
             restaurant_id = 0
             for row in result:
                 if mode != 0:
@@ -73,22 +74,6 @@ class Document():
         self.experiences = Experiences()
         self.replace_flg = 0
 
-
-
-
-    def read_document(self, filename):
-        '''
-        Args:
-            filename: str
-                分かち書きされた文書ファイル
-        '''
-        f = open(filename, 'r')
-        for line in f:
-            line = line.replace('\n', '')
-            sentence = line.split(' ')
-            self.document.append(sentence)
-        f.close()
-
     def make_document(self, filename):
         '''
         Args:
@@ -113,6 +98,19 @@ class Document():
                         sentence.append(arr[6])
                 res = res.next
             # print(sentence)
+            self.document.append(sentence)
+        f.close()
+
+    def read_document(self, filename):
+        '''
+        Args:
+            filename: str
+                分かち書きされた文書ファイル
+        '''
+        f = open(filename, 'r')
+        for line in f:
+            line = line.replace('\n', '')
+            sentence = line.split(' ')
             self.document.append(sentence)
         f.close()
 
