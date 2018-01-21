@@ -3,16 +3,11 @@ import os
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
-def get_db_connection(db):
+def get_db_connection():
     '''
     Get database connection
-
-    Args:
-        db: str
-            local
-            ieyasu
-            ieyasu-berry
     '''
+    db = os.environ.get('DB')
     try:
         if db == 'local':
             return MySQLdb.connect(host=os.environ.get('LOCAL_DB_HOST'), user=os.environ.get('LOCAL_DB_USER'), passwd=os.environ.get('LOCAL_DB_PASSWD'), db=os.environ.get('LOCAL_DB_DATABASE'), charset=os.environ.get('CHARSET'))
