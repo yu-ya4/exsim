@@ -66,40 +66,60 @@ def make_text_file_from_database(db, mode, conditions, output_filename):
     cursor.close()
     db_connection.close()
 
+def diveide_texts(input_filename, output_filename):
+        '''
+        Args:
+            input_filename: str
+                入力するテキストファイル名(分かち書きされていない)
+            output_filename: str
+                出力先のテキストファイル名(分かち書きされている)
+
+        名詞，動詞，形容詞，副詞のみ
+        原形で分かち書き
+        '''
+        mt = MeCab.Tagger("-Ochasen")
+        with open(input_filename, 'r') as in_f:
+            with open(output_filename, 'a') as out_f:
+                for line in in_f:
+                    line = line.replace('\n', '')
+                    res = mt.parseToNode(line)
+                    sentence = ''
+                    while res:
+                        arr = res.feature.split(",")
+                        if arr[0] == '名詞' or arr[0] == '動詞' or arr[0] == '副詞' or arr[0] == '形容詞':
+                            if arr[6] == '*':
+                                if sentence == '':
+                                    sentence += res.surface
+                                else:
+                                    sentence += ' ' + res.surface
+                            else:
+                                if sentence == '':
+                                    sentence += arr[6]
+                                else:
+                                    sentence += ' ' + arr[6]
+                        res = res.next
+                    print(sentence)
+                    out_f.write(sentence + '\n')
+
 class Document():
+    '''
+    represents a document
+    '''
     def __init__(self):
-        self.document = []
+        '''
+        sentences: list[list[str]]
+            [['今日', 'は', 'いい', '天気', 'です', '。'], ['本当', ' です', 'ね'], ['飲み', 'たい'], ...]
+        '''
+        self.sentences = []
+
+class Documents():
+    def __init__(self):
+        self.documents = []
         self.words_around_experiences = {}
         self.indexes_around_experiences = {}
         self.experiences = Experiences()
         self.replace_flg = 0
 
-    def make_document(self, filename):
-        '''
-        Args:
-            filename: str
-                文書ファイル(分かち書きされていない)
-
-        名詞，動詞，形容詞，副詞のみ
-        原形で
-        '''
-        mt = MeCab.Tagger("-Ochasen")
-        f = open(filename, 'r')
-        for line in f:
-            sentence = []
-            line = line.replace('\n', '')
-            res = mt.parseToNode(line)
-            while res:
-                arr = res.feature.split(",")
-                if arr[0] == '名詞' or arr[0] == '動詞' or arr[0] == '副詞' or arr[0] == '形容詞':
-                    if arr[6] == '*':
-                        sentence.append(res.surface)
-                    else:
-                        sentence.append(arr[6])
-                res = res.next
-            # print(sentence)
-            self.document.append(sentence)
-        f.close()
 
     def read_document(self, filename):
         '''
