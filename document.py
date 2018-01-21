@@ -6,6 +6,7 @@ import MySQLdb
 import os
 import traceback
 import sys
+import re
 from egmat.experience import Experience, Experiences
 from .dbconnection import get_db_connection
 from dotenv import load_dotenv, find_dotenv
@@ -66,6 +67,43 @@ def make_text_file_from_database(db, mode, conditions, output_filename):
     cursor.close()
     db_connection.close()
 
+def remove_urls(text):
+    '''
+    Remove urls from text
+
+    Args:
+        text: str
+    Returns:
+        str
+    '''
+    pattern = r'https?://[\w/:%#\$&\?\(\)~\.=\+\-]+'
+    text = re.sub(pattern, '', text)
+    return text
+
+def remove_unnecessary_expressions(text):
+    '''
+    Remove unnecessary expressions from text
+
+    Args:
+        text: str
+    Returns:
+        str
+    '''
+    patterns = [
+        r'DAmb\.Ad\.GDN.*html\'}\);',
+        r'varblogCommentType=.*;',
+        r'(\(|（)笑(\)|）)',
+        # r'[0-9|０-９|,|，]+円',
+        # r'[0-9|０-９|一二三四五六七八九十百]+時間?半?',
+        # r'[0-9|０-９|一二三四五六七八九十百]+分',
+        # r'[0-9|０-９]+[:|：][0-9|０-９]+',
+        r'[\(\)（）\^▽⌒\*＊\-_\+\:\?!\？\！\.．.。，、;；￣@＠#＃%％\$＄&＆♪/／＼\\≧≦○◯◎●◉❍✕✗✖´∀`❀ﾉ]'
+    ]
+    for pattern in patterns:
+        text = re.sub(pattern, '', text)
+    return text
+
+
 def diveide_texts(input_filename, output_filename):
         '''
         Args:
@@ -81,6 +119,8 @@ def diveide_texts(input_filename, output_filename):
         with open(input_filename, 'r') as in_f:
             with open(output_filename, 'a') as out_f:
                 for line in in_f:
+                    line = remove_unnecessary_expressions(line)
+                    line = remove_urls(line)
                     line = line.replace('\n', '')
                     res = mt.parseToNode(line)
                     sentence = ''
@@ -98,7 +138,7 @@ def diveide_texts(input_filename, output_filename):
                                 else:
                                     sentence += ' ' + arr[6]
                         res = res.next
-                    print(sentence)
+                    # print(sentence)
                     out_f.write(sentence + '\n')
 
 class Document():
