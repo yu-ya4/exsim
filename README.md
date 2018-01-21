@@ -18,13 +18,11 @@ make_text_file_from_database('ieyasu', 1, 'where res.pal="kyoto" limit 10', '../
 make_text_file_from_database('ieyasu', 2, 'where res.pal="kyoto" limit 10', '../../data/docs/test/test_reviews.txt')
 ```
 
-## Make divided document
+## Make texts divided
 ```
-doc = Document()
-# テキストファイルを読み込み分かち書きする．メンバ変数に保存．
-doc.make_document('../../data/docs/tabelog/20170816/reviews.txt')
-# メンバ変数に保存された分かち書きされた文章をテキストファイルに書き出す
-doc.write_document('../../data/docs/tabelog/20170816/reviews_divided.txt')
+# テキストファイルを読み込み分かち書きして保存
+diveide_texts('../../data/docs/test/test_reviews.txt', '../../data/docs/test/test_reviews_divided.txt')
+
 ```
 
 ## Replace experiences for symbols
