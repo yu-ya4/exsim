@@ -13,13 +13,11 @@ from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
 
-def make_text_file_from_database(db, mode, conditions, output_filename):
+def make_text_file_from_database(mode, conditions, output_filename):
     '''
     make text file from database
 
     Args:
-        db: str
-            "local", "ieyasu", "ieyasu-berry", "ieyasu-local"
         mode: int
             0 -> reviews, 1 -> restaurant prs, 2-> reviews and restaurant prs
         conditions: str
@@ -28,7 +26,7 @@ def make_text_file_from_database(db, mode, conditions, output_filename):
     '''
 
     try:
-        db_connection = get_db_connection(db)
+        db_connection = get_db_connection()
         cursor = db_connection.cursor()
 
         sql = '''
@@ -145,15 +143,18 @@ class Document():
     '''
     represents a document
     '''
-    def __init__(self):
+    def __init__(self, words=[]):
         '''
-        sentences: list[list[str]]
-            [['今日', 'は', 'いい', '天気', 'です', '。'], ['本当', ' です', 'ね'], ['飲み', 'たい'], ...]
+        words: list[str]
+            ['今日', 'は', 'いい', '天気', 'です', '。', '本当', ' です', 'ね', '飲み', 'たい'], ...]
         '''
-        self.sentences = []
+        self.words = words
 
 class Documents():
     def __init__(self):
+        '''
+        documents: list[Document]
+        '''
         self.documents = []
         self.words_around_experiences = {}
         self.indexes_around_experiences = {}
@@ -161,26 +162,27 @@ class Documents():
         self.replace_flg = 0
 
 
-    def read_document(self, filename):
+    def read_documents(self, filename):
         '''
         Args:
             filename: str
                 分かち書きされた文書ファイル
         '''
-        f = open(filename, 'r')
-        for line in f:
-            line = line.replace('\n', '')
-            sentence = line.split(' ')
-            self.document.append(sentence)
-        f.close()
+        with open(filename, 'r') as f:
+            for line in f:
+                line = line.replace('\n', '')
+                sentence = line.split(' ')
+                document = Document(sentence)
+                self.documents.append(document)
 
     def read_experience_list(self, label):
         '''
         Args:
             label: str
+                ex: 'chie-extracted2'
         '''
         self.experiences.__init__()
-        self.experiences.read_experiences_from_database('ieyasu', 'chie-extracted2')
+        self.experiences.read_experiences_from_database(label)
 
     def get_words_around_experiences(self, window=5):
         '''
