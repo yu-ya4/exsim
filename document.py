@@ -159,6 +159,7 @@ class Documents():
         self.words_around_experiences = {}
         self.indexes_around_experiences = {}
         self.experiences = Experiences()
+        self.replace_dict = {}
         self.replace_flg = 0
 
 
@@ -287,13 +288,14 @@ class Documents():
 
     def replace_experiences(self, target_verb, window=5):
         '''
+        target_verb("飲む"等)の周辺に，経験を成す語がすべて含まれる場合，それらを記号に置き換える．
+
         Args:
             target: 周辺語を取得する対象語．'飲む'等の動詞を想定．
             window: windowサイズ
         '''
-        replace_dict = self.make_replace_dict()
         # target_verbをキーワードから除く
-        for symbol, keywords in replace_dict.items():
+        for symbol, keywords in self.replace_dict.items():
             if target_verb in keywords:
                 keywords.remove(target_verb)
 
@@ -356,11 +358,18 @@ class Documents():
 
     def make_replace_dict(self):
         '''
-        行動を記号に置き換えるための辞書を作成
-        ex. 「ちょっと飲む」→「ちょっと」，「飲む」
+        経験を記号に置き換えるための辞書を作成
+        ex. 「少し飲む」→「少し」，「飲む」
         すべての語がwindowサイズ内にあれば記号に置き換える
+
+        {
+            'experience_replace_number_0': ['少し', '飲む'],
+            'experience_replace_number_1': ['女性', '飲む']
+            'experience_replace_number_2': ['一', '人', '飲む']
+            ...
+        }
         '''
-        replace_dict = {}
+        self.replace_dict = {} # initialize
         mt = MeCab.Tagger("-Ochasen")
         index = 0
         for experience in self.experiences.experiences:
@@ -375,10 +384,8 @@ class Documents():
                         values.append(arr[6])
                 res = res.next
             key = 'experience_replace_number_' + str(index)
-            replace_dict[key] = values
+            self.replace_dict[key] = values
             index += 1
-
-        return replace_dict
 
     def weight_experiences(self, num):
         '''

@@ -51,13 +51,10 @@ print(docs.experiences.experiences[0].modifier)
 
 ## Replace experiences for symbols
 ```
-doc = Document()
-doc.read_experience_list('chie-extracted2')
-# 分かち書きされた文章を読み込みメンバ変数に保存.
-doc.read_document('../../data/docs/tabelog/20170816/reviews_divided.txt')
+docs.make_replace_dict()
 # 「飲む」という語に注目．「飲む」の10語以内にある経験をなす語(experiencesに含まれる語)を記号に置き換える．
-doc.replace_experiences('飲む', 10)
-doc.write_document('../../data/docs/tabelog/20170816/reviews_replaced_10.txt')
+docs.replace_experiences('飲む', 10)
+docs.write_document('../../data/docs/tabelog/20170816/reviews_replaced_10.txt')
 ```
 
 ## Weight experience words
