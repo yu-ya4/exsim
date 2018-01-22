@@ -53,8 +53,8 @@ print(docs.experiences.experiences[0].modifier)
 ```
 docs.make_replace_dict()
 # 「飲む」という語に注目．「飲む」の10語以内にある経験をなす語(experiencesに含まれる語)を記号に置き換える．
-docs.replace_experiences('飲む', 10)
-docs.write_document('../../data/docs/tabelog/20170816/reviews_replaced_10.txt')
+docs.replace_experiences_with_symbols('飲む', 10)
+docs.write_documents(''../../data/docs/test/test_divided_replaced_10.txt')
 ```
 
 ## Weight experience words

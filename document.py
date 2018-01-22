@@ -150,6 +150,143 @@ class Document():
         '''
         self.words = words
 
+    def get_words_frequencies_around_target(self, target, window=5):
+        '''
+        対象語の周辺語を取得
+        Args:
+            target: str
+                対象とする語
+            window: int
+                周辺語をとるサイズ
+        Returns:
+            words_frequencies_around_target: Dictionary<str, int>
+                周辺語をkey，出現頻度をvalueとした辞書
+            words_indexes_around_target: Dictionary<str, List<int>>
+                    対象語のインデックスをkey，周辺語のインデックスのリストをvalueとした辞書
+                {対照語のインデックス: [indexes]}
+        '''
+        words_frequencies_around_target = {}
+        words_indexes_around_target = {}
+
+        # 文書中の対象語のインデックスを取得
+        target_indexes = [i for i, word in enumerate(self.words) if word == target]
+
+        # 文書中に対象語があれば周辺語を取得
+        if target_indexes:
+            length = len(self.words)
+
+            for i in target_indexes:
+                indexes = []
+
+                j = i - 1
+                while 1:
+                    # 対象語よりウィンドウサイズ以内の語のインデックスを取得
+                    # 文書の始まりに気をつける
+                    if j < 0 or j == i - window - 1:
+                        break
+                    indexes.append(j)
+                    j -= 1
+
+                j = i + 1
+                while 1:
+                    # 文章の終わりに気をつける
+                    if j >= length or j == i + window + 1:
+                        break
+                    indexes.append(j)
+                    j += 1
+
+                for index in indexes:
+                    # 周辺語の出現頻度を値とした辞書を作成
+                    word = self.words[index]
+                    if word in words_frequencies_around_target:
+                        words_frequencies_around_target[word] += 1
+                    else:
+                        words_frequencies_around_target[word] = 1
+
+                # 対象語のインデックスをキーとし，
+                # 対象語に対する周辺語のインデックスを値とした辞書を作成
+                key = str(i)
+                words_indexes_around_target[key] = indexes
+
+        return words_frequencies_around_target, words_indexes_around_target
+
+    def replace_experiences_with_symbols(self, target_verb, window, replace_dict):
+        '''
+        target_verb("飲む"等)の周辺に，経験を成す語がすべて含まれる場合，それらを記号に置き換える．
+
+        Args:
+            target_verb: 対象となる経験の動詞部分を表す語．'飲む'等の動詞を想定．
+            window: windowサイズ
+        '''
+        # target_verbをキーワードから除く
+        for symbol, keywords in replace_dict.items():
+            if target_verb in keywords:
+                keywords.remove(target_verb)
+
+        # 語の原形を比較するため
+        mt = MeCab.Tagger("-Ochasen")
+
+        # 周辺語をsymbolに置換したtarget_verbのインデックスを記憶する辞書
+        # {'experience_replace_number_0': [5, 13], ...}
+        replaced_target_verb_indexes = {}
+        # self.words = ['天気', 'が', '良い', 'ので', '一', '人', 'で', 'ちょっと', '出かけて', '安く','飲む', 'こと', 'する', 'さあ', '親', 'と', 'ちょっと', '飲む', '。', '安い', 'し', '美味い']
+
+        _, words_indexes_around_target_verb = self.get_words_frequencies_around_target(target_verb, window)
+        for target_verb_index, indexes in words_indexes_around_target_verb.items():
+            for symbol, keywords in replace_dict.items():
+                # keywordがすべて含まれているか調べる
+                keywords_in = True
+                temp = []
+                for keyword in keywords:
+                    if not keywords_in:
+                        break
+                    for i in indexes:
+                        # もともと原形やからいらなくね？
+                        # res = mt.parseToNode(self.words[sen_i][i])
+                        # res = res.next
+                        # arr = res.feature.split(",")
+                        # if arr[6] == '*':
+                        #     original_form = res.surface
+                        # else:
+                        #     original_form = arr[6]
+                        # if original_form == keyword:
+                        #     temp.append(i)
+                        #     keywords_in = True
+                        #     break
+                        # else:
+                        #     keywords_in = False
+                        if self.words[i] == keyword:
+                            temp.append(i)
+                            keywords_in = True
+                            break
+                        else:
+                            keywords_in = False
+
+                # keywordがすべて含まれていれば
+                if keywords_in:
+                    for i in temp:
+                        # 記号に置換
+                        self.words[i] = symbol
+
+                    if symbol in replaced_target_verb_indexes:
+                        replaced_target_verb_indexes[symbol].append(int(target_verb_index))
+                    else:
+                        replaced_target_verb_indexes[symbol] = [int(target_verb_index)]
+                else:
+                    continue
+
+        # target_verbもsymbolに置き換える
+        # ずれた分考えられてないけど...
+        for symbol, target_verb_indexes in replaced_target_verb_indexes.items():
+            for target_verb_index in target_verb_indexes:
+                if self.words[target_verb_index] == target_verb:
+                    # target消去
+                    self.words.pop(target_verb_index)
+                    self.words.insert(target_verb_index, symbol)
+                else:
+                    self.words.insert(target_verb_index, symbol)
+
+
 class Documents():
     def __init__(self):
         '''
@@ -185,176 +322,48 @@ class Documents():
         self.experiences.__init__()
         self.experiences.read_experiences_from_database(label)
 
-    def get_words_around_experiences(self, window=5):
-        '''
-        リスト中の行動の周辺語を得る
-            ex.) self.words_around_experiences['ゆっくり飲む'] = {'バー': 10, ...}
+    # def get_words_around_experiences(self, window=5):
+    #     '''
+    #     リスト中の行動の周辺語を得る
+    #         ex.) self.words_around_experiences['ゆっくり飲む'] = {'バー': 10, ...}
+    #
+    #     Args:
+    #         window: int
+    #             周辺語をとるサイズ
+    #     '''
+    #     # 初期化
+    #     self.words_around_experiences = {}
+    #     self.indexes_around_experiences = {}
+    #     self.replace_flg = 1
+    #
+    #     if not self.replace_flg:
+    #         for experience in self.experiences.experiences:
+    #             mod = experience.modifier
+    #             words, indexes = self.get_words_around_word(mod, window)
+    #             self.words_around_experiences[mod] = words
+    #             self.indexes_around_experiences[mod] = indexes
+    #     else:
+    #         i = 0
+    #         for experience in self.experiences.experiences:
+    #             mod = experience.modifier
+    #             experience_symbol = 'experience_replace_number_' + str(i)
+    #             words, indexes = self.get_words_around_word(experience_symbol, window)
+    #             self.words_around_experiences[mod] = words
+    #             self.indexes_around_experiences[mod] = indexes
+    #             i+=1
 
-        Args:
-            window: int
-                周辺語をとるサイズ
-        '''
-        # 初期化
-        self.words_around_experiences = {}
-        self.indexes_around_experiences = {}
-        self.replace_flg = 1
+    #
+    # def show_words_around_experience(self, mod):
+    #     '''
+    #     特定の行動名の周辺語を出現頻度順に表示させる
+    #     Args:
+    #         mod: str
+    #     '''
+    #     print(sorted(self.words_around_experiences[mod].items(), key = lambda x: x[1]))
 
-        if not self.replace_flg:
-            for experience in self.experiences.experiences:
-                mod = experience.modifier
-                words, indexes = self.get_words_around_word(mod, window)
-                self.words_around_experiences[mod] = words
-                self.indexes_around_experiences[mod] = indexes
-        else:
-            i = 0
-            for experience in self.experiences.experiences:
-                mod = experience.modifier
-                experience_symbol = 'experience_replace_number_' + str(i)
-                words, indexes = self.get_words_around_word(experience_symbol, window)
-                self.words_around_experiences[mod] = words
-                self.indexes_around_experiences[mod] = indexes
-                i+=1
-
-
-    def get_words_around_word(self, target, window=5):
-        '''
-        対象語の周辺語を取得
-        Args:
-            target: str
-                対象とする語
-            window: int
-                周辺語をとるサイズ
-        Returns:
-            words_around_word: Dictionary<str, int>
-                周辺語をkey，出現頻度をvalueとした辞書
-            indexes_around_word: Dictionary<str, List<int>>
-                文書番号とターゲーットインデックスをkey，周辺語のリストのリストをvalueとした辞書
-                {(文書番号:ターゲットインデックス): [indexes]}
-        '''
-        words_around_word = {}
-        indexes_around_word = {}
-        # 文章番号
-        sen_i = 0
-        for sentence in self.document:
-            # 文章中の対象語のインデックスを取得
-            target_indexes = [i for i, w in enumerate(sentence) if w == target]
-
-            # 文章中に対象語があれば周辺語を取得
-            if target_indexes:
-                length = len(sentence)
-
-                for i in target_indexes:
-                    indexes = []
-                    j = i + 1
-                    while 1:
-                        # 対象語よりウィンドウサイズ以内の語のインデックスを取得
-                        # 文章の終わりに気をつける
-                        if j >= length or j == i + window + 1:
-                            break
-                        indexes.append(j)
-                        j += 1
-
-                    j = i - 1
-                    while 1:
-                        # 文章の始まりに気をつける
-                        if j < 0 or j == i - window - 1:
-                            break
-                        indexes.append(j)
-                        j -= 1
-
-                    for index in indexes:
-                        # 周辺語の出現頻度を値とした辞書を作成
-                        word = sentence[index]
-                        if word in words_around_word:
-                            words_around_word[word] += 1
-                        else:
-                            words_around_word[word] = 1
-
-                    # 文章番号とターゲットインデックスをキーとし，
-                    # 文章ごとの対象語に対する周辺語のインデックスを値とした辞書を作成
-                    key = str(sen_i) + ':' + str(i)
-                    indexes_around_word[key] = indexes
-            sen_i += 1
-
-        return words_around_word, indexes_around_word
-
-    def show_words_around_experience(self, mod):
-        '''
-        特定の行動名の周辺語を出現頻度順に表示させる
-        Args:
-            mod: str
-        '''
-        print(sorted(self.words_around_experiences[mod].items(), key = lambda x: x[1]))
-
-    def replace_experiences(self, target_verb, window=5):
-        '''
-        target_verb("飲む"等)の周辺に，経験を成す語がすべて含まれる場合，それらを記号に置き換える．
-
-        Args:
-            target: 周辺語を取得する対象語．'飲む'等の動詞を想定．
-            window: windowサイズ
-        '''
-        # target_verbをキーワードから除く
-        for symbol, keywords in self.replace_dict.items():
-            if target_verb in keywords:
-                keywords.remove(target_verb)
-
-        # 語の原形を比較するため
-        mt = MeCab.Tagger("-Ochasen")
-
-        # 置換するターゲットを記憶する
-        replace_targets = {}
-        # self.document = [['天気', 'が', '良い', 'ので', '一', '人', 'で', 'ちょっと', '出かけて', '安く','飲む', 'こと', 'する'],
-        #                     ['さあ', '親', 'と', 'ちょっと', '飲む', '。', '安い', 'し', '美味い']]
-
-        words, indexes = self.get_words_around_word(target_verb, window)
-        for key, index in indexes.items():
-            sen_i, target_id = map(int, key.split(':'))
-            for symbol, keywords in replace_dict.items():
-                # keywordがすべて含まれていれば置換する
-                keywords_in = True
-                temp = []
-                for keyword in keywords:
-                    if not keywords_in:
-                        break
-                    for i in index:
-                        res = mt.parseToNode(self.document[sen_i][i])
-                        res = res.next
-                        arr = res.feature.split(",")
-                        if arr[6] == '*':
-                            original_form = res.surface
-                        else:
-                            original_form = arr[6]
-                        if original_form == keyword:
-                            temp.append(i)
-                            keywords_in = True
-                            break
-                        else:
-                            keywords_in = False
-
-                if keywords_in:
-                    for i in temp:
-                        # 記号に置換
-                        self.document[sen_i][i] = symbol
-
-                    if symbol in replace_targets:
-                        replace_targets[symbol].append([sen_i, target_id])
-                    else:
-                        replace_targets[symbol] = [[sen_i, target_id]]
-                else:
-                    continue
-
-        for symbol, targets in replace_targets.items():
-            for target in targets:
-                s_i, t_i = int(target[0]), int(target[1])
-
-                if self.document[s_i][t_i] == target_verb:
-                    # target消去
-                    self.document[s_i].pop(t_i)
-
-                self.document[s_i].insert(t_i, symbol)
-
-        self.replace_flg = 1
+    def replace_experiences_with_symbols(self, target_verb, window=5):
+        for document in self.documents:
+            document.replace_experiences_with_symbols(target_verb, window, self.replace_dict)
 
     def make_replace_dict(self):
         '''
@@ -383,77 +392,82 @@ class Documents():
                     else:
                         values.append(arr[6])
                 res = res.next
+            if len(values) == 1:
+                continue
             key = 'experience_replace_number_' + str(index)
             self.replace_dict[key] = values
             index += 1
 
-    def weight_experiences(self, num):
+    # def weight_experiences(self, num):
+    #     '''
+    #     increase the number of experience symbols to weight experiences
+    #
+    #     Args:
+    #         num: 増やす数
+    #     Returns:
+    #         None
+    #     '''
+    #     replace_dict = self.make_replace_dict()
+    #     for key, value in replace_dict.items():
+    #         sen_i = 0
+    #         for sentence in self.document:
+    #             target_indexes = [i for i, w in enumerate(sentence) if w == key]
+    #             gap = 0
+    #             for target_index in target_indexes:
+    #                 for n in range(num):
+    #                     self.document[sen_i].insert(target_index+gap, key)
+    #                     gap += 1
+    #             sen_i += 1
+    #
+    # def weight_words(self, num, words):
+    #     '''
+    #     increase the number of action symbols to weight actions
+    #
+    #     Args:
+    #         num: int
+    #             増やす数
+    #         words: list[str]
+    #             増やす単語
+    #     Returns:
+    #         None
+    #     '''
+    #     for word in words:
+    #         sen_i = 0
+    #         for sentence in self.document:
+    #             target_indexes = [i for i, w in enumerate(sentence) if w == word]
+    #             gap = 0
+    #             for target_index in target_indexes:
+    #                 for n in range(num):
+    #                     self.document[sen_i].insert(target_index+gap, word)
+    #                     gap += 1
+    #             sen_i += 1
+    #
+    def write_documents(self, output_filename):
         '''
-        increase the number of experience symbols to weight experiences
-
+        self.documentsをテキストファイルに書き出す
+        一文書（document）を一行に改行区切り
         Args:
-            num: 増やす数
-        Returns:
-            None
+            output_filename: str
         '''
-        replace_dict = self.make_replace_dict()
-        for key, value in replace_dict.items():
-            sen_i = 0
-            for sentence in self.document:
-                target_indexes = [i for i, w in enumerate(sentence) if w == key]
-                gap = 0
-                for target_index in target_indexes:
-                    for n in range(num):
-                        self.document[sen_i].insert(target_index+gap, key)
-                        gap += 1
-                sen_i += 1
-
-    def weight_words(self, num, words):
-        '''
-        increase the number of action symbols to weight actions
-
-        Args:
-            num: int
-                増やす数
-            words: list[str]
-                増やす単語
-        Returns:
-            None
-        '''
-        for word in words:
-            sen_i = 0
-            for sentence in self.document:
-                target_indexes = [i for i, w in enumerate(sentence) if w == word]
-                gap = 0
-                for target_index in target_indexes:
-                    for n in range(num):
-                        self.document[sen_i].insert(target_index+gap, word)
-                        gap += 1
-                sen_i += 1
-
-    def write_document(self, filepath):
-        '''
-        self.documentをテキストファイルに書き出す
-        '''
-        f = open(filepath, 'w')
-        for sentence in self.document:
+        f = open(output_filename, 'w')
+        for document in self.documents:
             text = ''
-            for i in range(len(sentence)):
-                text += sentence[i]
-                if i == len(sentence) - 1:
+            for i in range(len(document.words)):
+                text += document.words[i]
+                if i == len(document.words) - 1:
                     text += '\n'
                 else:
                     text += ' '
             f.write(text)
         f.close()
 
-
-    def get_around_experience(self, mod):
-        results = []
-        for word, frequent in sorted(self.words_around_experiences[mod].items(), key = lambda x: x[1], reverse=True):
-            results.append([word, frequent])
-
-        return results
+    #
+    # def get_around_experience(self, mod):
+    #     results = []
+    #     for word, frequent in sorted(self.words_around_experiences[mod].items(), key = lambda x: x[1], reverse=True):
+    #         results.append([word, frequent])
+    #
+    #     return results
 
 if __name__ == '__main__':
     # doc = Document()
