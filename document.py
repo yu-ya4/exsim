@@ -7,6 +7,7 @@ import os
 import traceback
 import sys
 import re
+from collections import Counter
 from egmat.experience import Experience, Experiences
 from .dbconnection import get_db_connection
 from dotenv import load_dotenv, find_dotenv
@@ -149,6 +150,8 @@ class Document():
             ['今日', 'は', 'いい', '天気', 'です', '。', '本当', ' です', 'ね', '飲み', 'たい'], ...]
         '''
         self.words = words
+        self.words_frequencies_around_experiences = {}
+        self.words_indexes_around_experiences = {}
 
     def get_words_frequencies_around_target(self, target, window=5):
         '''
@@ -287,18 +290,44 @@ class Document():
                     self.words.insert(target_verb_index, symbol)
 
 
+    def get_words_frequencies_around_experiences(self, window, replace_dict):
+        '''
+        リスト中の経験の周辺語を得る
+            ex.) self.words_around_experiences['ゆっくり飲む'] = {'バー': 10, ...}
+
+        Args:
+            window: int
+                周辺語をとるサイズ
+            replace_dict: dict{str: list[str]}
+
+            {
+                'experience_replace_number_0': ['少し', '飲む'],
+                'experience_replace_number_1': ['女性', '飲む']
+                'experience_replace_number_2': ['一', '人', '飲む']
+                ...
+            }
+        '''
+        # 初期化
+        self.words_frequencies_around_experiences = {}
+        self.words_indexes_around_experiences = {}
+
+        i = 0
+        for experience_symbol, exp in replace_dict.items():
+            exp = ''.join(exp)
+            words, indexes = self.get_words_frequencies_around_target(experience_symbol, window)
+            self.words_frequencies_around_experiences[exp] = words
+            self.words_indexes_around_experiences[exp] = indexes
+            i+=1
+
 class Documents():
     def __init__(self):
         '''
         documents: list[Document]
         '''
         self.documents = []
-        self.words_around_experiences = {}
-        self.indexes_around_experiences = {}
+        self.words_frequencies_around_experiences = {}
         self.experiences = Experiences()
         self.replace_dict = {}
-        self.replace_flg = 0
-
 
     def read_documents(self, filename):
         '''
@@ -322,35 +351,29 @@ class Documents():
         self.experiences.__init__()
         self.experiences.read_experiences_from_database(label)
 
-    # def get_words_around_experiences(self, window=5):
-    #     '''
-    #     リスト中の行動の周辺語を得る
-    #         ex.) self.words_around_experiences['ゆっくり飲む'] = {'バー': 10, ...}
-    #
-    #     Args:
-    #         window: int
-    #             周辺語をとるサイズ
-    #     '''
-    #     # 初期化
-    #     self.words_around_experiences = {}
-    #     self.indexes_around_experiences = {}
-    #     self.replace_flg = 1
-    #
-    #     if not self.replace_flg:
-    #         for experience in self.experiences.experiences:
-    #             mod = experience.modifier
-    #             words, indexes = self.get_words_around_word(mod, window)
-    #             self.words_around_experiences[mod] = words
-    #             self.indexes_around_experiences[mod] = indexes
-    #     else:
-    #         i = 0
-    #         for experience in self.experiences.experiences:
-    #             mod = experience.modifier
-    #             experience_symbol = 'experience_replace_number_' + str(i)
-    #             words, indexes = self.get_words_around_word(experience_symbol, window)
-    #             self.words_around_experiences[mod] = words
-    #             self.indexes_around_experiences[mod] = indexes
-    #             i+=1
+
+    def get_words_frequencies_around_experiences(self, window=5):
+        '''
+        リスト中の経験の周辺語を得る
+            ex.) self.words_around_experiences['ゆっくり飲む'] = {'バー': 10, ...}
+
+        Args:
+            window: int
+                周辺語をとるサイズ
+        '''
+        # 初期化
+        self.words_frequencies_around_experiences = {}
+        self.words_indexes_around_experiences = {}
+
+        for document in self.documents:
+            document.get_words_frequencies_around_experiences(window, self.replace_dict)
+            # print(document.words_frequencies_around_experiences)
+            for exp, words_frequencies in document.words_frequencies_around_experiences.items():
+                exp = ''.join(exp)
+                if exp not in self.words_frequencies_around_experiences:
+                    self.words_frequencies_around_experiences[exp] = words_frequencies
+                else:
+                    self.words_frequencies_around_experiences[exp] = dict(Counter(self.words_frequencies_around_experiences[exp]) + Counter(words_frequencies))
 
     #
     # def show_words_around_experience(self, mod):
@@ -382,7 +405,7 @@ class Documents():
         mt = MeCab.Tagger("-Ochasen")
         index = 0
         for experience in self.experiences.experiences:
-            res = mt.parseToNode(experience.verb + experience.modifier)
+            res = mt.parseToNode(experience.modifier + experience.verb)
             values = []
             while res:
                 arr = res.feature.split(",")
