@@ -7,6 +7,7 @@ import os
 import traceback
 import sys
 import re
+import numpy as np
 from collections import Counter
 from egmat.experience import Experience, Experiences
 from .dbconnection import get_db_connection
@@ -144,14 +145,17 @@ class Document():
     '''
     represents a document
     '''
-    def __init__(self, words=[]):
+    def __init__(self, words=[], document_id=0):
         '''
         words: list[str]
             ['今日', 'は', 'いい', '天気', 'です', '。', '本当', ' です', 'ね', '飲み', 'たい'], ...]
         '''
+        self.document_id = document_id
         self.words = words
         self.words_frequencies_around_experiences = {}
         self.words_indexes_around_experiences = {}
+        self.words_frequencies_dictionary = {}
+
 
     def get_words_frequencies_around_target(self, target, window=5):
         '''
@@ -328,6 +332,8 @@ class Documents():
         self.words_frequencies_around_experiences = {}
         self.experiences = Experiences()
         self.replace_dict = {}
+        self.all_words_frequencies_dictionary = {}
+        self.all_documents_weight = {}
 
     def read_documents(self, filename):
         '''
@@ -336,11 +342,13 @@ class Documents():
                 分かち書きされた文書ファイル
         '''
         with open(filename, 'r') as f:
+            i = 0
             for line in f:
                 line = line.replace('\n', '')
                 sentence = line.split(' ')
-                document = Document(sentence)
+                document = Document(sentence, i)
                 self.documents.append(document)
+                i += 1
 
     def read_experience_list(self, label):
         '''
@@ -421,50 +429,50 @@ class Documents():
             self.replace_dict[key] = values
             index += 1
 
-    # def weight_experiences(self, num):
-    #     '''
-    #     increase the number of experience symbols to weight experiences
-    #
-    #     Args:
-    #         num: 増やす数
-    #     Returns:
-    #         None
-    #     '''
-    #     replace_dict = self.make_replace_dict()
-    #     for key, value in replace_dict.items():
-    #         sen_i = 0
-    #         for sentence in self.document:
-    #             target_indexes = [i for i, w in enumerate(sentence) if w == key]
-    #             gap = 0
-    #             for target_index in target_indexes:
-    #                 for n in range(num):
-    #                     self.document[sen_i].insert(target_index+gap, key)
-    #                     gap += 1
-    #             sen_i += 1
-    #
-    # def weight_words(self, num, words):
-    #     '''
-    #     increase the number of action symbols to weight actions
-    #
-    #     Args:
-    #         num: int
-    #             増やす数
-    #         words: list[str]
-    #             増やす単語
-    #     Returns:
-    #         None
-    #     '''
-    #     for word in words:
-    #         sen_i = 0
-    #         for sentence in self.document:
-    #             target_indexes = [i for i, w in enumerate(sentence) if w == word]
-    #             gap = 0
-    #             for target_index in target_indexes:
-    #                 for n in range(num):
-    #                     self.document[sen_i].insert(target_index+gap, word)
-    #                     gap += 1
-    #             sen_i += 1
-    #
+    def calc_words_weight(self):
+        '''
+        文書ごとに単語の重みを計算
+        '''
+        all_words_frequencies_dictionary = {}
+        document_frequencies_dictionary = {}
+
+        for document in self.documents:
+            words_frequencies_dictionary = {}
+            for word in document.words:
+                if word not in all_words_frequencies_dictionary:
+                    all_words_frequencies_dictionary[word] = 1
+                else:
+                    all_words_frequencies_dictionary[word] += 1
+
+                if word not in words_frequencies_dictionary:
+                    words_frequencies_dictionary[word] = 1
+
+                    # dfの計算
+                    if word not in document_frequencies_dictionary:
+                        document_frequencies_dictionary[word] = 1
+                    else:
+                        document_frequencies_dictionary[word] += 1
+                else:
+                    words_frequencies_dictionary[word] += 1
+            document.words_frequencies_dictionary = words_frequencies_dictionary
+        self.all_words_frequencies_dictionary = all_words_frequencies_dictionary
+
+        self.all_documents_weight = {}
+        document_count = len(self.documents)
+        for word, freq in all_words_frequencies_dictionary.items():
+            df = document_frequencies_dictionary[word]
+            idf = np.log(document_count/df) + 1
+            for document in self.documents:
+                tf = document.words_frequencies_dictionary[word] if  word in document.words_frequencies_dictionary else 0
+                tfidf = tf * idf
+                if document.document_id not in self.all_documents_weight:
+                    self.all_documents_weight[document.document_id] = {word: tfidf}
+                else:
+                    self.all_documents_weight[document.document_id][word] = tfidf
+
+
+
+
     def write_documents(self, output_filename):
         '''
         self.documentsをテキストファイルに書き出す
