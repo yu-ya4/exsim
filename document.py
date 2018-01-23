@@ -103,6 +103,18 @@ def remove_unnecessary_expressions(text):
         text = re.sub(pattern, '', text)
     return text
 
+def normalyze_dictionary_by_maximum(dic):
+    '''
+    Args:
+    dict: dic{str: float}
+    '''
+    maximum = sorted(dic.items(), key=lambda x: x[1], reverse=True)[0][1]
+    if maximum == 0:
+        return dic
+    for key, val in dic.items():
+        dic[key] = val/maximum
+
+    return dic
 
 def diveide_texts(input_filename, output_filename):
         '''
@@ -470,7 +482,9 @@ class Documents():
                 else:
                     self.all_documents_weight[document.document_id][word] = tfidf
 
-
+        # normalyze by max value
+        for key, document_weight in self.all_documents_weight.items():
+            self.all_documents_weight[key] = normalyze_dictionary_by_maximum(document_weight)
 
 
     def write_documents(self, output_filename):
@@ -492,6 +506,37 @@ class Documents():
             f.write(text)
         f.close()
 
+    def append(self, another_document):
+        '''
+        append a Document to the Documents
+
+        Args:
+            another_document: Document
+        Returns:
+            None
+        '''
+        if self.has_id(another_document.document_id):
+            print('erorr: duplicate id: ' + str(another_document.document_id))
+        else:
+            self.documents.append(another_document)
+
+    def extend(self, another_documents):
+        '''
+        extend the Documents by another Documents
+
+        Args:
+            another_documents: Documents
+        Returns:
+            None
+        '''
+        for another_document in another_documents.documents:
+            if self.has_id(another_document.document_id):
+                print('erorr: duplicate id: ' + str(another_document.document_id))
+                return
+        self.documents.extend(another_documents.documents)
+
+    def has_id(self, document_id):
+        return document_id in [doc.document_id for doc in self.documents]
     #
     # def get_around_experience(self, mod):
     #     results = []
