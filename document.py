@@ -47,16 +47,17 @@ def make_text_file_from_database(mode, conditions, output_filename):
                 if mode != 0:
                     if restaurant_id != row[0]:
                         restaurant_id = row[0]
-                        pr_title = '' if row[1] is None or row[1] == '' else (row[1])
-                        pr_body = '' if row[2] is None or row[2] == '' else (row[2] + '\n')
-                        pr = pr_title + pr_body
+                        pr_title = '' if row[1] is None or row[1] == '' else row[1]
+                        pr_body = '' if row[2] is None or row[2] == '' else row[2]
+                        pr = pr_title + pr_body + '\n'
                         f.write(pr)
                 if mode != 1:
-                    review_title = '' if row[4] is None or row[4] == '' else (row[4])
-                    review_body = '' if row[5] is None or row[5] == '' else (row[5] + '\n')
+                    review_title = '' if row[4] is None or row[4] == '' else row[4]
+                    review_body = '' if row[5] is None or row[5] == '' else row[5]
                     review = review_title + review_body
-                    f.write(review)
-
+                    review = review.replace('\n', '')
+                    review = review.replace('\r', '')
+                    f.write(review + '\n')
     except MySQLdb.Error as e:
         print('MySQLdb.Error: ', e)
 
@@ -129,7 +130,7 @@ def diveide_texts(input_filename, output_filename):
         '''
         mt = MeCab.Tagger("-Ochasen")
         with open(input_filename, 'r') as in_f:
-            with open(output_filename, 'a') as out_f:
+            with open(output_filename, 'w') as out_f:
                 for line in in_f:
                     line = remove_unnecessary_expressions(line)
                     line = remove_urls(line)
@@ -485,6 +486,15 @@ class Documents():
         # normalyze by max value
         for key, document_weight in self.all_documents_weight.items():
             self.all_documents_weight[key] = normalyze_dictionary_by_maximum(document_weight)
+
+    def make_documents_for_each_experience(self):
+        words = {}
+        for exp, _ in self.replace_dict.items():
+            words[exp] = []
+            for document in self.documents:
+                if exp in document.words:
+                    words[exp].extend(document.words)
+        print(words)
 
 
     def write_documents(self, output_filename):
