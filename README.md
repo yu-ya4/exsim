@@ -41,6 +41,8 @@ document.diveide_texts('../../data/docs/test/test_reviews.txt', '../../data/docs
 ```
 docs = document.Documents()
 docs.read_documents('../../data/docs/test/test_reviews_divided.txt')
+# レストランidも読み込みたい場合は以下
+#docs.read_documents('../../data/docs/test/test_reviews_divided.txt', ''../../data/docs/test/test_reviews.txt.restaurant_ids.txt'')
 print(docs.documents[0])
 # <exsim.document.Document object at 0x10f90ec50>
 print(docs.documents[0].words)
@@ -61,7 +63,7 @@ print(docs.experiences.experiences[0].modifier)
 docs.make_replace_dict()
 # 「飲む」という語に注目．「飲む」の10語以内にある経験をなす語(experiencesに含まれる語)を記号に置き換える．
 docs.replace_experiences_with_symbols('飲む', 10)
-docs.write_documents(''../../data/docs/test/test_divided_replaced_10.txt')
+docs.write_documents('../../data/docs/test/test_divided_replaced_10.txt')
 ```
 
 
@@ -86,4 +88,9 @@ print(docs.words_frequencies_around_experiences)
 docs.calc_words_weight()
 print(docs.all_documents_weight)
 # {0: {'今日': 0.73436916155120424, 'は': 0.57898508202353927, 'いい': 1.0, '天気': 1.0, 'です': 0.73436916155120424, 'も': 0.0, '頑張る': 0.0, '昨日': 0.0, '雨': 0.0, 'が': 0.0, '振った': 0.0, '私は': 0.0, '嫌い': 0.0, '曇り': 0.0, '晴れ': 0.0}, 1: {'今日': 0.73436916155120424, 'は': 0.0, 'いい': 0.0, '天気': 0.0, 'です': 0.0, 'も': 1.0, '頑張る': 1.0, '昨日': 0.0, '雨': 0.0, 'が': 0.0, '振った': 0.0, '私は': 0.0, '嫌い': 0.0, '曇り': 0.0, '晴れ': 0.0}, 2: {'今日': 0.0, 'は': 0.57898508202353927, 'いい': 0.0, '天気': 0.0, 'です': 0.0, 'も': 0.0, '頑張る': 0.0, '昨日': 1.0, '雨': 0.73436916155120424, 'が': 0.73436916155120424, '振った': 1.0, '私は': 0.0, '嫌い': 0.0, '曇り': 0.0, '晴れ': 0.0}, 3: {'今日': 0.0, 'は': 0.57898508202353927, 'いい': 0.0, '天気': 0.0, 'です': 0.73436916155120424, 'も': 0.0, '頑張る': 0.0, '昨日': 0.0, '雨': 0.73436916155120424, 'が': 0.73436916155120424, '振った': 0.0, '私は': 1.0, '嫌い': 1.0, '曇り': 0.0, '晴れ': 0.0}, 4: {'今日': 0.0, 'は': 0.0, 'いい': 0.0, '天気': 0.0, 'です': 0.0, 'も': 0.0, '頑張る': 0.0, '昨日': 0.0, '雨': 0.0, 'が': 0.0, '振った': 0.0, '私は': 0.0, '嫌い': 0.0, '曇り': 1.0, '晴れ': 0.33333333333333331}}
+```
+
+## Make Documents for each experience
+```
+exp_docs = docs.make_documents_for_each_experience()
 ```

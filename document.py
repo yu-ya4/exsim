@@ -41,23 +41,26 @@ def make_text_file_from_database(mode, conditions, output_filename):
         result = cursor.fetchall()
 
         with open(output_filename, 'w') as f:
+            with open(output_filename + '.restaurant_ids.txt', 'w') as rf:
             # 1行に1地物の店舗情報(title+body) or 1つのレビュー(title+body)
-            restaurant_id = 0
-            for row in result:
-                if mode != 0:
-                    if restaurant_id != row[0]:
+                restaurant_id = 0
+                for row in result:
+                    if mode != 0:
+                        if restaurant_id != row[0]:
+                            restaurant_id = row[0]
+                            pr_title = '' if row[1] is None or row[1] == '' else row[1]
+                            pr_body = '' if row[2] is None or row[2] == '' else row[2]
+                            pr = pr_title + pr_body + '\n'
+                            f.write(pr)
+                    if mode != 1:
                         restaurant_id = row[0]
-                        pr_title = '' if row[1] is None or row[1] == '' else row[1]
-                        pr_body = '' if row[2] is None or row[2] == '' else row[2]
-                        pr = pr_title + pr_body + '\n'
-                        f.write(pr)
-                if mode != 1:
-                    review_title = '' if row[4] is None or row[4] == '' else row[4]
-                    review_body = '' if row[5] is None or row[5] == '' else row[5]
-                    review = review_title + review_body
-                    review = review.replace('\n', '')
-                    review = review.replace('\r', '')
-                    f.write(review + '\n')
+                        rf.write(str(restaurant_id) + '\n')
+                        review_title = '' if row[4] is None or row[4] == '' else row[4]
+                        review_body = '' if row[5] is None or row[5] == '' else row[5]
+                        review = review_title + review_body
+                        review = review.replace('\n', '')
+                        review = review.replace('\r', '')
+                        f.write(review + '\n')
     except MySQLdb.Error as e:
         print('MySQLdb.Error: ', e)
 
@@ -158,12 +161,13 @@ class Document():
     '''
     represents a document
     '''
-    def __init__(self, words=[], document_id=0):
+    def __init__(self, words=[], document_id=0, restaurant_id=0):
         '''
         words: list[str]
             ['今日', 'は', 'いい', '天気', 'です', '。', '本当', ' です', 'ね', '飲み', 'たい'], ...]
         '''
         self.document_id = document_id
+        self.restaurant_id = restaurant_id
         self.words = words
         self.words_frequencies_around_experiences = {}
         self.words_indexes_around_experiences = {}
@@ -341,6 +345,7 @@ class Documents():
         '''
         documents: list[Document]
         '''
+        self.read_filename = ''
         self.documents = []
         self.words_frequencies_around_experiences = {}
         self.experiences = Experiences()
@@ -348,18 +353,30 @@ class Documents():
         self.all_words_frequencies_dictionary = {}
         self.all_documents_weight = {}
 
-    def read_documents(self, filename):
+    def read_documents(self, documents_filename, restaurant_ids_filename=''):
         '''
         Args:
-            filename: str
+            documents_filename: str
                 分かち書きされた文書ファイル
+            restaurant_ids_filename: str
+                レビューのレストランidが１行ずつ記載されたファイル
+        Returns:
+            None
         '''
-        with open(filename, 'r') as f:
+        self.read_filename = documents_filename
+
+        with open(documents_filename, 'r') as f:
+            if restaurant_ids_filename:
+                with open(restaurant_ids_filename, 'r') as rf:
+                    restaurant_ids = rf.readlines()
+            else:
+                restaurant_ids = 0
+
             i = 0
             for line in f:
                 line = line.replace('\n', '')
                 sentence = line.split(' ')
-                document = Document(sentence, i)
+                document = Document(sentence, i, int(restaurant_ids[i]) if restaurant_ids else 0)
                 self.documents.append(document)
                 i += 1
 
@@ -488,13 +505,30 @@ class Documents():
             self.all_documents_weight[key] = normalyze_dictionary_by_maximum(document_weight)
 
     def make_documents_for_each_experience(self):
-        words = {}
+        '''
+        経験ごとに，その経験が含まれるレビューを集めて1文書とした新たなDocuments()を作成する．
+        experiencesとreplace_dictは引き継ぐ
+
+        Returns:
+            Documents()
+        '''
+        exp_docs = Documents()
+        exp_docs.experiences = self.experiences
+        exp_docs.replace_dict = self.replace_dict
+
+        doc_ids = {}
         for exp, _ in self.replace_dict.items():
-            words[exp] = []
+            exp_words = []
+            doc_ids[exp] = []
             for document in self.documents:
                 if exp in document.words:
-                    words[exp].extend(document.words)
-        print(words)
+                    exp_words.extend(document.words)
+                    doc_ids[exp].append(document.document_id)
+            exp_id = int(exp.split('_')[3])
+            exp_doc = Document(exp_words, exp_id)
+            exp_docs.append(exp_doc)
+
+        return exp_docs
 
 
     def write_documents(self, output_filename):
