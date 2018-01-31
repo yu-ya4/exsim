@@ -351,7 +351,7 @@ class Documents():
         self.experiences = Experiences()
         self.replace_dict = {}
         self.all_words_frequencies_dictionary = {}
-        self.all_documents_weight = {}
+        self.document_frequencies_dictionary = {}
 
     def read_documents(self, documents_filename, restaurant_ids_filename=''):
         '''
@@ -459,7 +459,7 @@ class Documents():
             self.replace_dict[key] = values
             index += 1
 
-    def calc_words_weight(self):
+    def get_tf_and_df(self):
         '''
         文書ごとに単語の重みを計算
         '''
@@ -474,6 +474,7 @@ class Documents():
                 else:
                     all_words_frequencies_dictionary[word] += 1
 
+                # その文書でその語が初めて出現した時
                 if word not in words_frequencies_dictionary:
                     words_frequencies_dictionary[word] = 1
 
@@ -485,24 +486,63 @@ class Documents():
                 else:
                     words_frequencies_dictionary[word] += 1
             document.words_frequencies_dictionary = words_frequencies_dictionary
+
         self.all_words_frequencies_dictionary = all_words_frequencies_dictionary
+        self.document_frequencies_dictionary = document_frequencies_dictionary
 
-        self.all_documents_weight = {}
-        document_count = len(self.documents)
-        for word, freq in all_words_frequencies_dictionary.items():
-            df = document_frequencies_dictionary[word]
-            idf = np.log(document_count/df) + 1
+    def calc_words_weights(self):
+        '''
+        文書ごとにtfidfの値を算出
+        tf: tf, log(tf+1), bool(tf)
+        idf: N/df, log(N/df)+1
+
+        文書ごとに最大値で正規化
+
+        tfidfs: [
+            tf * N/df,
+            log(tf+1) * N/df,
+            bool(tf) * N/df,
+            tf * (log(N/df)+1),
+            log(tf+1) * (log(N/df)+1),
+            bool(tf) * (log(N/df)+1)
+            ]
+
+        Returns:
+            dict{int: dict{str: list[float]}}
+
+                {
+                    1: {
+                        'カウンター': [0.3, 0.5, 0.23, 0.65, 0.55, 0.123],
+                        ...
+                    },
+                    ...
+                }
+        '''
+
+        all_documents_weight = {}
+        document_count = float(len(self.documents))
+        for word, _ in self.all_words_frequencies_dictionary.items():
+            df = self.document_frequencies_dictionary[word]
+            idfs = [document_count/df, np.log(document_count/df) + 1]
             for document in self.documents:
-                tf = document.words_frequencies_dictionary[word] if  word in document.words_frequencies_dictionary else 0
-                tfidf = tf * idf
-                if document.document_id not in self.all_documents_weight:
-                    self.all_documents_weight[document.document_id] = {word: tfidf}
-                else:
-                    self.all_documents_weight[document.document_id][word] = tfidf
+                tf = float(document.words_frequencies_dictionary[word] if  word in document.words_frequencies_dictionary else 0)
+                tfs =[tf, np.log(tf+1), 1.0 if tf else 0.0]
 
+                tfidfs = []
+                for idf in idfs:
+                    for tf in tfs:
+                        tfidf = tf * idf
+                        tfidfs.append(tfidf)
+
+                if document.document_id not in all_documents_weight:
+                    all_documents_weight[document.document_id] = {word: tfidfs}
+                else:
+                    all_documents_weight[document.document_id][word] = tfidfs
+
+        return all_documents_weight
         # normalyze by max value
-        for key, document_weight in self.all_documents_weight.items():
-            self.all_documents_weight[key] = normalyze_dictionary_by_maximum(document_weight)
+        # for key, document_weights all_documents_weight.items():
+        #     all_documents_weight[key] = normalyze_dictionary_by_maximum(document_weight)
 
     def make_documents_for_each_experience(self):
         '''
