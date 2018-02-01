@@ -469,6 +469,7 @@ class Documents():
         for document in self.documents:
             words_frequencies_dictionary = {}
             for word in document.words:
+                # 文書全体でその語が初めて出現した時
                 if word not in all_words_frequencies_dictionary:
                     all_words_frequencies_dictionary[word] = 1
                 else:
@@ -543,6 +544,36 @@ class Documents():
         # normalyze by max value
         # for key, document_weights all_documents_weight.items():
         #     all_documents_weight[key] = normalyze_dictionary_by_maximum(document_weight)
+
+    def write_word_weights(self, all_documents_weight, output_path):
+        '''
+        weights = [
+            tf * N/df,
+            log(tf+1) * N/df,
+            bool(tf) * N/df,
+            tf * (log(N/df)+1),
+            log(tf+1) * (log(N/df)+1),
+            bool(tf) * (log(N/df)+1)
+            ]
+        '''
+
+        # 経験ごとに出力先のディレクトリを作成
+        for _, exps in self.replace_dict.items():
+            exp = ''.join(exps)
+            target_dir = output_path + '/' + exp
+            if not os.path.isdir(target_dir):
+                os.makedirs(target_dir)
+
+        for document_id, word_weights in all_documents_weight.items():
+            experience_symbol = 'experience_replace_number_' + str(document_id)
+            experience = ''.join(self.replace_dict[experience_symbol])
+            for i in range(6):
+                with open(output_path + '/' + experience + '/' + str(i) + '.txt', 'w') as fw:
+                    for word, weights in sorted(word_weights.items(), key = lambda x: x[1][i], reverse=True):
+                        if weights[i] == 0:
+                            break
+                        line = str(word) + ' ' + str(weights[i]) + '\n'
+                        fw.write(line)
 
     def make_documents_for_each_experience(self):
         '''
